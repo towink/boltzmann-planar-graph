@@ -18,6 +18,7 @@ from framework.decomposition_grammar import AliasSampler, DecompositionGrammar
 from framework.generic_samplers import BoltzmannSamplerBase
 
 from planar_graph_sampler.combinatorial_classes.one_connected_graph import OneConnectedPlanarGraph
+from planar_graph_sampler.grammar.binary_tree_decomposition import EarlyRejectionControl
 from planar_graph_sampler.grammar.grammar_utils import underive
 from planar_graph_sampler.grammar.two_connected_decomposition import two_connected_graph_grammar
 
@@ -44,19 +45,25 @@ def merge(prod):
     # lhs is a bi-derived connected and rhs a derived connected.
     lhs = prod.first
     rhs = prod.second
-    if not lhs.base_class_object.marked_atom.is_trivial:
-        rhs.marked_atom.insert_all_after(lhs.base_class_object.marked_atom)
+    if not lhs.marked_atom.is_trivial:
+        rhs.marked_atom.insert_all_after(lhs.marked_atom)
     return lhs
 
 
 def subs_marked_vertex(decomp):
     # decomp is of form (G_1_dx + L * G_1_dx_dx) * G_2_dx_dx.
+
     if isinstance(decomp.first, LDerivedClass):
-        plug_in_he = decomp.first.marked_atom
+        one_connected = decomp.first
+        plug_in_he = one_connected.marked_atom
+        if not plug_in_he.is_trivial:
+            decomp.second.base_class_object.marked_atom.insert_all_after(plug_in_he)
     else:
-        plug_in_he = decomp.first.second.marked_atom  # or ... .base_class_object.marked_atom ?
-    if not plug_in_he.is_trivial:
-        decomp.second.base_class_object.marked_atom.insert_all_after(plug_in_he)
+        one_connected = decomp.first.second
+        plug_in_he = one_connected.marked_atom
+        if not plug_in_he.is_trivial:
+            decomp.second.base_class_object.marked_atom.insert_all_after(plug_in_he)
+            decomp.second.base_class_object.marked_atom = one_connected.base_class_object.marked_atom
     return decomp.second
 
 
@@ -105,6 +112,8 @@ def one_connected_graph_grammar():
 
     grammar = DecompositionGrammar()
     grammar.rules = two_connected_graph_grammar().rules
+    EarlyRejectionControl.grammar = grammar
+
     grammar.rules = {
 
         'G_1':
@@ -161,8 +170,6 @@ def one_connected_graph_grammar():
 
     }
     grammar.set_builder(['G_1_dx'], Merger())
-    grammar['R_w'].builder.grammar = grammar
-    grammar['R_b'].builder.grammar = grammar
 
     return grammar
 
@@ -182,7 +189,7 @@ if __name__ == '__main__':
     grammar.init()
     symbolic_x = 'x'
     symbolic_y = 'y'
-    sampled_class = 'G_1_dx_dx_dx'
+    sampled_class = 'G_1_dx'
     # print(grammar.collect_oracle_queries(sampled_class, symbolic_x, symbolic_y))
     grammar.precompute_evals(sampled_class, symbolic_x, symbolic_y)
     end = timer()
@@ -196,30 +203,30 @@ if __name__ == '__main__':
     # random.seed(0)
     # boltzmann_framework_random_gen.seed(13)
 
-    # l_sizes = []
-    # i = 0
-    # samples = 100
-    # start = timer()
-    # while i < samples:
-    #     obj = grammar.sample_iterative(sampled_class, symbolic_x, symbolic_y)
-    #     l_sizes.append(obj.l_size)
-    #     # print(obj.l_size)
-    #     i += 1
-    # end = timer()
-    # print()
-    # print("avg. size: {}".format(sum(l_sizes) / len(l_sizes)))
-    # print("time: {}".format(end - start))
+    l_sizes = []
+    i = 0
+    samples = 1000
+    start = timer()
+    while i < samples:
+        obj = grammar.sample_iterative(sampled_class, symbolic_x, symbolic_y)
+        l_sizes.append(obj.l_size)
+        # print(obj.l_size)
+        i += 1
+    end = timer()
+    print()
+    print("avg. size: {}".format(sum(l_sizes) / len(l_sizes)))
+    print("time: {}".format(end - start))
 
-    while True:
-        g = grammar.sample_iterative(sampled_class, symbolic_x, symbolic_y)
-        print(g)
-        for key, value in sorted(Stats.rules.items(), key=lambda x: x[1]):
-            print("{} : {}".format(key, value))
-        print()
-        # if g.l_size >= 1000:
-        #     g = g.underive_all()
-        #     print(g)
-        #     print(g.u_size / g.l_size)
-        #     # assert g.is_consistent
-        #     #g.plot(with_labels=False, use_planar_drawer=False, node_size=13)
-        #     #plt.show()
+    # while True:
+    #     g = grammar.sample_iterative(sampled_class, symbolic_x, symbolic_y)
+    #     print(g)
+    #     for key, value in sorted(Stats.rules.items(), key=lambda x: x[1]):
+    #         print("{} : {}".format(key, value))
+    #     print()
+    #     # if g.l_size >= 1000:
+    #     #     g = g.underive_all()
+    #     #     print(g)
+    #     #     print(g.u_size / g.l_size)
+    #     #     # assert g.is_consistent
+    #     #     #g.plot(with_labels=False, use_planar_drawer=False, node_size=13)
+    #     #     #plt.show()
