@@ -14,7 +14,7 @@
 
 import random
 
-from planar_graph_sampler.bijections.networks import substitute_edge_by_network
+from planar_graph_sampler.operations.networks import substitute_edge_by_network
 from planar_graph_sampler.combinatorial_classes.half_edge_graph import HalfEdgeGraph
 
 

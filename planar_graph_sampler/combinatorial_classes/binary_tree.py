@@ -140,7 +140,7 @@ class BinaryTree(HalfEdgeGraph):
 
     # Networkx related functionality.
 
-    def to_networkx_graph(self, include_unpaired=True):
+    def to_networkx_graph(self, include_unpaired=True, relabel=True):
         # Get dict of nodes.
         nodes = self.half_edge.node_dict()
         # Include the leaves as well.

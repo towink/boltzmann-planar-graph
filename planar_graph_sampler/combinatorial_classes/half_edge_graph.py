@@ -20,6 +20,7 @@ from framework.generic_classes import CombinatorialClass
 
 from planar_graph_sampler.grammar.grammar_utils import Counter
 from planar_graph_sampler.combinatorial_classes.halfedge import HalfEdge
+from planar_graph_sampler.operations.misc import relabel_networkx
 
 
 class HalfEdgeGraph(CombinatorialClass):
@@ -124,7 +125,7 @@ class HalfEdgeGraph(CombinatorialClass):
         """Maybe it's not so stupid to actually implement this here ... (same for l_subs)"""
         raise NotImplementedError
 
-    def replace_l_atoms(self, sampler, x, y, exceptions=None):
+    def replace_l_atoms(self, sampler, x=None, y=None, exceptions=None):
         raise NotImplementedError
 
     def __str__(self):
@@ -179,14 +180,16 @@ class HalfEdgeGraph(CombinatorialClass):
                 reference_neighbour = he.opposite.node_nr
         return embedding
 
-    def to_networkx_graph(self, include_unpaired=False):
+    def to_networkx_graph(self, include_unpaired=False, relabel=True):
         """Transforms the graph into a networkx graph.
 
         Parameters
         ----------
-        include_unpaired: bool, optional (default=False)
+        include_unpaired : bool, optional (default=False)
             Includes half-edges that do not have an opposite.
             In this case, a new node is created and connected to the unpaired half-edge.
+        relabel : bool, optional (default=True)
+            Relabel nodes from 1 to n.
         """
         # Get the counter in case we have to create nodes for unpaired half-edges.
         counter = Counter()
@@ -206,7 +209,8 @@ class HalfEdgeGraph(CombinatorialClass):
                 G.add_edge(half_edge.node_nr, half_edge.opposite.node_nr)
             else:
                 G.add_edge(half_edge.node_nr, next(counter))
-        # G = nx.relabel.convert_node_labels_to_integers(G)
+        if relabel:
+            relabel_networkx(G)
         return G
 
     def plot(self, **kwargs):
@@ -244,24 +248,3 @@ class HalfEdgeGraph(CombinatorialClass):
             nx.draw(G, pos=pos, with_labels=with_labels, node_color=list(colors), node_size=node_size)
         else:
             nx.draw(G, pos=pos, with_labels=with_labels, node_size=node_size)
-
-
-def color_scale(hex_str, factor):
-    """Scales a hex string by ``factor``. Returns scaled hex string."""
-    hex_str = hex_str.strip('#')
-    if factor < 0 or len(hex_str) != 6:
-        return hex_str
-    r, g, b = int(hex_str[:2], 16), int(hex_str[2:4], 16), int(hex_str[4:], 16)
-
-    def clamp(val, min=0, max=255):
-        if val < min:
-            return min
-        if val > max:
-            return max
-        return int(val)
-
-    r = clamp(r * factor)
-    g = clamp(g * factor)
-    b = clamp(b * factor)
-
-    return "#%02x%02x%02x" % (r, g, b)

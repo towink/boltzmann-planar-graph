@@ -83,7 +83,7 @@ class Network(HalfEdgeGraph):
 
     # Networkx related functionality.
 
-    def to_networkx_graph(self, include_unpaired=False):
+    def to_networkx_graph(self, include_unpaired=False, relabel=True):
         g = super(Network, self).to_networkx_graph(include_unpaired=include_unpaired)
         if not self.is_linked:
             link = self.half_edge
