@@ -16,7 +16,7 @@ from framework.generic_samplers import *
 from framework.decomposition_grammar import DecompositionGrammar, AliasSampler
 from framework.evaluation_oracle import EvaluationOracle
 from framework.generic_samplers import BoltzmannSamplerBase
-from planar_graph_sampler.bijections.closure import Closure
+from planar_graph_sampler.operations.closure import Closure
 from planar_graph_sampler.combinatorial_classes import BinaryTree
 from planar_graph_sampler.combinatorial_classes.dissection import IrreducibleDissection
 from planar_graph_sampler.grammar.binary_tree_decomposition import binary_tree_grammar, EarlyRejectionControl

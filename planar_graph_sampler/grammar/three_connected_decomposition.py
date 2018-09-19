@@ -21,7 +21,7 @@ from planar_graph_sampler.grammar.binary_tree_decomposition import EarlyRejectio
 
 from planar_graph_sampler.grammar.grammar_utils import to_l_derived_class, divide_by_2
 from planar_graph_sampler.grammar.irreducible_dissection_decomposition import irreducible_dissection_grammar
-from planar_graph_sampler.bijections.primal_map import PrimalMap
+from planar_graph_sampler.operations.primal_map import PrimalMap
 from planar_graph_sampler.combinatorial_classes.three_connected_graph import EdgeRootedThreeConnectedPlanarGraph
 
 

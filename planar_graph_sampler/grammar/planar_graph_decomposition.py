@@ -14,20 +14,33 @@
 
 import networkx as nx
 
-from framework.evaluation_oracle import EvaluationOracle
 from framework.generic_samplers import *
 from framework.decomposition_grammar import AliasSampler, DecompositionGrammar
 
+from planar_graph_sampler.grammar.binary_tree_decomposition import EarlyRejectionControl
 from planar_graph_sampler.grammar.one_connected_decomposition import one_connected_graph_grammar
+from planar_graph_sampler.operations.misc import relabel_networkx
 
 
-def bij_connected_comps(components):
+def comps_to_nx_planar_embedding(components):
     """Set of connected planar graphs (possibly derived) to nx.PlanarEmbedding."""
     res = nx.PlanarEmbedding()
     for g in components:
         g = g.underive_all()
         g = g.to_planar_embedding()
         res = nx.PlanarEmbedding(nx.compose(res, g))
+    relabel_networkx(res)
+    return res
+
+
+def comps_to_nx_graph(components):
+    """Set of connected planar graphs (possibly derived) to nx.Graph."""
+    res = nx.Graph()
+    for g in components:
+        g = g.underive_all()
+        g = g.to_networkx_graph(relabel=False)
+        res = nx.compose(res, g)
+    relabel_networkx(res)
     return res
 
 
@@ -43,7 +56,7 @@ def planar_graph_grammar():
 
     Returns
     -------
-    DecompositionGrammar
+    grammar : DecompositionGrammar
         The grammar for sampling from G, G_dx and G_dx_dx.
     """
 
@@ -51,14 +64,15 @@ def planar_graph_grammar():
     G_1 = AliasSampler('G_1')
     G_1_dx = AliasSampler('G_1_dx')
     G_1_dx_dx = AliasSampler('G_1_dx_dx')
+    G_1_dx_dx_dx = AliasSampler('G_1_dx_dx_dx')
     G = AliasSampler('G')
     G_dx = AliasSampler('G_dx')
+    G_dx_dx = AliasSampler('G_dx')
 
     grammar = DecompositionGrammar()
     grammar.rules = one_connected_graph_grammar().rules
+    EarlyRejectionControl.grammar = grammar
     grammar.rules = {
-
-        # planar graphs
 
         'G': SetSampler(0, G_1),
 
@@ -66,75 +80,11 @@ def planar_graph_grammar():
 
         'G_dx_dx': G_1_dx_dx * G + G_1_dx * G_dx,
 
+        'G_dx_dx_dx': G_1_dx_dx_dx * G + G_1_dx_dx * G_dx + G_1_dx_dx * G_dx + G_1_dx * G_dx_dx
+
     }
-<<<<<<< Updated upstream
     grammar.set_builder(['G', 'G_dx', 'G_dx_dx'], PlanarGraphBuilder())
-=======
-<<<<<<< Updated upstream
-=======
-    grammar.set_builder(['G', 'G_dx', 'G_dx_dx'], PlanarGraphBuilder())
-    grammar['R_w'].builder.grammar = grammar
-    grammar['R_b'].builder.grammar = grammar
->>>>>>> Stashed changes
->>>>>>> Stashed changes
+
 
     return grammar
 
-
-if __name__ == '__main__':
-<<<<<<< Updated upstream
-    import matplotlib.pyplot as plt
-    from planar_graph_sampler.evaluations_planar_graph import planar_graph_evals_n100, planar_graph_evals_n1000, \
-        reference_evals
-=======
-<<<<<<< Updated upstream
-    grammar = planar_graph_grammar()
-    grammar.init()
-=======
-    import matplotlib.pyplot as plt
-    from planar_graph_sampler.evaluations_planar_graph import *
->>>>>>> Stashed changes
->>>>>>> Stashed changes
-
-    BoltzmannSamplerBase.oracle = EvaluationOracle(planar_graph_evals[10000])
-    BoltzmannSamplerBase.debug_mode = False
-
-    grammar = planar_graph_grammar()
-    grammar.init()
-    symbolic_x = 'x'
-    symbolic_y = 'y'
-    sampled_class = 'G_dx_dx'
-    grammar.precompute_evals(sampled_class, symbolic_x, symbolic_y)
-
-    # random.seed(0)
-
-    while True:
-<<<<<<< Updated upstream
-=======
-<<<<<<< Updated upstream
-
->>>>>>> Stashed changes
-        try:
-            g = grammar.sample_iterative(sampled_class, symbolic_y,,,,,,, None,
-            if g.l_size > 0:
-                print(g)
-                g = bij_connected_comps(g)
-                nx.draw(g, pos=nx.combinatorial_embedding_to_pos(g), node_size=10, use_planar_drawer=True)
-                plt.show()
-        except RecursionError:
-<<<<<<< Updated upstream
-            print("Recursion error")
-=======
-            print("Recursion error occurred, continuing")
-            pass
-=======
-        g = grammar.sample_iterative(sampled_class, symbolic_y,,,,,,, None,
-        if g.l_size > 0:
-            g = bij_connected_comps(g)
-            print(g.number_of_nodes())
-            print()
-            # nx.draw(g, pos=nx.combinatorial_embedding_to_pos(g), node_size=10, use_planar_drawer=True)
-            # plt.show()
-
->>>>>>> Stashed changes
->>>>>>> Stashed changes

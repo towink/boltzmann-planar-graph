@@ -19,7 +19,7 @@ from framework.generic_samplers import BoltzmannSamplerBase
 
 from planar_graph_sampler.grammar.binary_tree_decomposition import EarlyRejectionControl
 from planar_graph_sampler.grammar.grammar_utils import Counter
-from planar_graph_sampler.bijections.networks import merge_networks_in_parallel, merge_networks_in_series, \
+from planar_graph_sampler.operations.networks import merge_networks_in_parallel, merge_networks_in_series, \
     substitute_edge_by_network
 from planar_graph_sampler.combinatorial_classes.halfedge import HalfEdge
 from planar_graph_sampler.combinatorial_classes.network import Network
