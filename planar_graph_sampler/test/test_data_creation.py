@@ -24,7 +24,7 @@ from planar_graph_sampler.grammar.one_connected_decomposition import one_connect
 from planar_graph_sampler.grammar.planar_graph_decomposition import planar_graph_grammar
 from framework.evaluation_oracle import EvaluationOracle
 from planar_graph_sampler.evaluations_planar_graph import planar_graph_evals
-from planar_graph_sampler.grammar.planar_graph_decomposition import bij_connected_comps
+from planar_graph_sampler.grammar.planar_graph_decomposition import comps_to_planar_embedding
 
 
 def ___sample_combinatorial_class(name, comb_class, symbolic_x, symbolic_y, size, exact=True, derived=0):
@@ -91,7 +91,7 @@ def ___save_graph_in_file(graph, name):
     file.write('\n')
 
     if name is 'planar_graph':
-        nx_graph =  bij_connected_comps(graph)   
+        nx_graph =  comps_to_planar_embedding(graph)
     else:
         und_der = graph.underive_all()
         nx_graph = und_der.to_networkx_graph()

@@ -15,7 +15,7 @@
 from nose.tools import assert_equals, assert_false, assert_true
 from planar_graph_sampler.test.mock_objects_creator import create_three_connected_graph, \
     create_sample_network_for_testing_merge_operations, create_sample_network_for_testing_substitution_operation
-from planar_graph_sampler.bijections.networks import *
+from planar_graph_sampler.operations.networks import *
 
 
 class TestNetworkOperations(object):

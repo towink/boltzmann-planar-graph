@@ -27,7 +27,7 @@ from networkx.algorithms import isomorphism
 from test_data_creation import create_data
 from planar_graph_sampler.combinatorial_classes.halfedge import HalfEdge
 from planar_graph_sampler.grammar.grammar_utils import Counter
-from planar_graph_sampler.grammar.planar_graph_decomposition import bij_connected_comps
+from planar_graph_sampler.grammar.planar_graph_decomposition import comps_to_planar_embedding
 counter = Counter()
 
 # Define colors for output
@@ -470,7 +470,7 @@ def ___sample_and_analyse_nx_graphs(name, file_data ,sample_num, samples_size):
     graph_list = create_data(name, sample_num, samples_size)
 
     if name is 'planar_graph':
-        nx_g = [bij_connected_comps(o) for o in graph_list]
+        nx_g = [comps_to_planar_embedding(o) for o in graph_list]
     else:
         und_der = [o.underive_all() for o in graph_list]
         nx_g = [u.to_networkx_graph() for u in und_der] 

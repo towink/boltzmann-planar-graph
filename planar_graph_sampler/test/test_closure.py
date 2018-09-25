@@ -14,7 +14,7 @@
 
 from nose.tools import assert_false, assert_true
 from planar_graph_sampler.test.mock_objects_creator import create_sample_binary_tree
-from planar_graph_sampler.bijections.closure import Closure
+from planar_graph_sampler.operations.closure import Closure
 # from framework.generic_samplers import BoltzmannSamplerBase
 # from framework.decomposition_grammar import AliasSampler, DecompositionGrammar
 # from planar_graph_sampler.grammar.binary_tree_decomposition import binary_tree_grammar
@@ -281,15 +281,3 @@ class TestClosure(object):
                             new_edge_2 = True
                     assert_true(new_edge_1, "No edge (4,4) (hex,btree")
                     assert_true(new_edge_2, "No edge (4,7) (hex,btree")
-                
-
-
-
-
-
-
-
-                    
-
-
-        

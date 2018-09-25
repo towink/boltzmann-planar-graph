@@ -21,9 +21,9 @@ from framework.decomposition_grammar import AliasSampler, DecompositionGrammar
 from framework.evaluation_oracle import EvaluationOracle
 from framework.generic_samplers import BoltzmannSamplerBase
 
-from planar_graph_sampler.bijections.closure import Closure
-from planar_graph_sampler.bijections.primal_map import PrimalMap
-from planar_graph_sampler.bijections.whitney_3map_to_3graph import WhitneyBijection
+from planar_graph_sampler.operations.closure import Closure
+from planar_graph_sampler.operations.primal_map import PrimalMap
+from planar_graph_sampler.operations.whitney_3map_to_3graph import WhitneyBijection
 from planar_graph_sampler.grammar.binary_tree_decomposition import binary_tree_grammar
 from planar_graph_sampler.grammar.two_connected_decomposition import two_connected_graph_grammar
 from planar_graph_sampler.evaluations_planar_graph import planar_graph_evals_n100
@@ -235,7 +235,7 @@ def irreducible_dissection_oldtest():
 
 def one_connected_oldtest():
     from planar_graph_sampler.grammar.two_connected_decomposition import two_connected_graph_grammar
-    from planar_graph_sampler.bijections.block_decomposition import BlockDecomposition
+    from planar_graph_sampler.operations.block_decomposition import BlockDecomposition
 
     symbolic_x = 'x*G_1_dx(x,y)'
     symbolic_y = 'y'

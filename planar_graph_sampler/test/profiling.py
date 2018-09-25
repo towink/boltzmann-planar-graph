@@ -1,91 +1,60 @@
-from planar_graph_generator import PlanarGraphGenerator
-import networkx as nx
 import cProfile
-import time
-from planar_graph_sampler.evaluations_planar_graph import planar_graph_evals
+import pstats
+import random
 
-def __time_statistics_for_different_graph_sizes():
-    graphs_sizes = [30000, 40000, 50000, 75000, 100000]
-    variances = [50]
-    how_many_graphs_per_size = 10
+from planar_graph_sampler.grammar.binary_tree_decomposition import binary_tree_grammar
+from planar_graph_sampler.grammar.irreducible_dissection_decomposition import irreducible_dissection_grammar
 
-    with open(("time_statistics_%s.txt" % variances[0]), "a") as stats_file:
-        for N in graphs_sizes:
-            for variance in variances:
-                for i in range(how_many_graphs_per_size):
-                    start = time.time()
+# random.seed(2)
 
-                    generator = PlanarGraphGenerator()
-                    gnx, lower_bound_errors, upper_bound_errors = generator.generate_planar_graph_with_statistics(N, variance)
+from framework.evaluation_oracle import EvaluationOracle
+from framework.generic_samplers import BoltzmannSamplerBase
+from framework.utils import boltzmann_framework_random_gen
+from planar_graph_sampler.evaluations_planar_graph import *
 
-                    end = time.time()
-                    time_in_seconds = end - start
-                    print(nx.info(gnx))
-                    stats_file.write('%s\t%s\t%s\t%s\t%s\t%s\t%s\n' % (N, variance,
-                        gnx.number_of_nodes(), gnx.number_of_edges(), time_in_seconds, lower_bound_errors, upper_bound_errors ))
-                    stats_file.flush()
+from planar_graph_sampler.grammar.one_connected_decomposition import one_connected_graph_grammar
+
+import sys
+
+from planar_graph_sampler.grammar.planar_graph_decomposition import planar_graph_grammar
 
 
-def __time_statistics_for_different_graph_sizes_with_multiprocessing():
-    graphs_sizes = [30000]
-    variances = [50]
-    how_many_graphs_per_size = 10
+def run_profiler():
+    oracle = EvaluationOracle(my_evals_10000)
+    BoltzmannSamplerBase.oracle = oracle
+    BoltzmannSamplerBase.debug_mode = False
 
-    with open(("time_statistics_parallel_impl_%s.txt" % variances[0]), "a") as stats_file:
-        for N in graphs_sizes:
-            for variance in variances:
-                for i in range(how_many_graphs_per_size):
-                    start = time.time()
+    grammar = planar_graph_grammar()
+    grammar.init()
+    symbolic_x = 'x'
+    symbolic_y = 'y'
+    sampled_class = 'G_dx_dx_dx'
+    # symbolic_x = 'x*G_1_dx(x,y)'
+    # symbolic_y = 'D(x*G_1_dx(x,y),y)'
+    # sampled_class = 'K_dx_dx'
+    # print(grammar.collect_oracle_queries(sampled_class, symbolic_x, symbolic_y))
+    grammar.precompute_evals(sampled_class, symbolic_x, symbolic_y)
 
-                    generator = PlanarGraphGenerator()
-                    gnx, lower_bound_errors, upper_bound_errors = generator.initial_multiprocess_implementation(N, variance)
+    # random.seed(0)
+    # boltzmann_framework_random_gen.seed(13)
 
-                    end = time.time()
-                    time_in_seconds = end - start
-                    print(nx.info(gnx))
-                    stats_file.write('%s\t%s\t%s\t%s\t%s\t%s\t%s\n' % (N, variance,
-                        gnx.number_of_nodes(), gnx.number_of_edges(), time_in_seconds, lower_bound_errors, upper_bound_errors ))
-                    stats_file.flush()
-
-
-def __time_statistics_for_graph_size_100_and_different_oracles():
-    graphs_sizes = [100]
-    variances = [50, 10]
-    oracle_parameters = [100, 1000, 10000]
-    how_many_graphs_per_size = 20
-
-    with open("time_statistics_oracles.txt", "a") as stats_file:
-        for N in graphs_sizes:
-            for oracle_param in oracle_parameters:
-                for variance in variances:
-                    for i in range(how_many_graphs_per_size):
-                        start = time.time()
-
-                        generator = PlanarGraphGenerator()
-                        gnx, lower_bound_errors, upper_bound_errors = \
-                            generator.generate_planar_graph_with_statistics(N, variance, planar_graph_evals[oracle_param])
-
-                        end = time.time()
-                        time_in_seconds = end - start
-                        print(nx.info(gnx))
-                        stats_file.write('%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' % (N, variance, oracle_param,
-                            gnx.number_of_nodes(), gnx.number_of_edges(), time_in_seconds, lower_bound_errors, upper_bound_errors ))
-                        stats_file.flush()
+    l_sizes = []
+    i = 0
+    samples = 1
+    while i < samples:
+        obj = grammar.sample_iterative(sampled_class, symbolic_x, symbolic_y)
+        l_sizes.append(obj.l_size)
+        print(obj.l_size)
+        i += 1
+    print()
+    print("avg. size: {}".format(sum(l_sizes) / len(l_sizes)))
 
 
-def __generate_planar_graph_profiling():
-    generator = PlanarGraphGenerator()
-    gnx, lower_bound_errors, upper_bound_errors = generator.generate_planar_graph_with_statistics(10000, 50)
-    print(nx.info(gnx))
-
-
-
-
-
-
-if __name__ == '__main__':
-    #cProfile.run('__generate_planar_graph_profiling()')
-    #__time_statistics_for_different_graph_sizes()
-    #__time_statistics_for_graph_size_100_and_different_oracles()
-    __time_statistics_for_different_graph_sizes_with_multiprocessing()
-
+if __name__ == "__main__":
+    # random.seed(1)
+    # run_profiler()
+    stats = {}
+    cProfile.run('run_profiler()', 'restats')
+    p = pstats.Stats('restats')
+    # p.strip_dirs().sort_stats('time').print_stats(50)
+    # p.strip_dirs().sort_stats('cumtime').print_stats(50)
