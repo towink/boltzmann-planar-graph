@@ -125,6 +125,7 @@ class AliasSampler(BoltzmannSamplerBase):
     def sample_iterative(self, stack, result_stack, prev, grammar, stack_append, stack_pop):
         if prev is None or self in prev.get_children():
             stack.append(self._referenced_sampler)
+            # print(self._alias)
         else:
             stack.pop()
 
@@ -398,7 +399,7 @@ class DecompositionGrammar(object):
                 v = self._DFSVisitor(apply_to_each)
                 self[alias].accept(v)
 
-    def sample_iterative(self, alias, x, y):
+    def sample_iterative(self, alias, x=None, y=None):
         """Samples from the rule identified by `alias` in an iterative manner.
 
         Traverses the decomposition tree in post-order.

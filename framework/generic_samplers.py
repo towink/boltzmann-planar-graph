@@ -494,10 +494,10 @@ class ProdSampler(BinarySampler):
             # Both children have been processed.
             stack.pop()
             # A bit faster than popping twice.
-            arg_lhs, arg_rhs = result_stack[-2:]
-            del result_stack[-2:]
-            # arg_rhs = result_stack.pop()
-            # arg_lhs = result_stack.pop()
+            # arg_lhs, arg_rhs = result_stack[-2:]
+            # del result_stack[-2:]
+            arg_rhs = result_stack.pop()
+            arg_lhs = result_stack.pop()
             result_stack.append(self.builder.product(arg_lhs, arg_rhs))
 
 

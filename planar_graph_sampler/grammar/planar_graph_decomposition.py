@@ -27,9 +27,10 @@ def comps_to_nx_planar_embedding(components):
     res = nx.PlanarEmbedding()
     for g in components:
         g = g.underive_all()
-        g = g.to_planar_embedding()
+        g = g.to_planar_embedding(relabel=False)
         res = nx.PlanarEmbedding(nx.compose(res, g))
-    relabel_networkx(res)
+    # Relabel once all the components are in the same graph.
+    # relabel_networkx(res)
     return res
 
 
@@ -40,6 +41,7 @@ def comps_to_nx_graph(components):
         g = g.underive_all()
         g = g.to_networkx_graph(relabel=False)
         res = nx.compose(res, g)
+    # Relabel once all the components are in the same graph.
     relabel_networkx(res)
     return res
 
@@ -72,6 +74,7 @@ def planar_graph_grammar():
     grammar = DecompositionGrammar()
     grammar.rules = one_connected_graph_grammar().rules
     EarlyRejectionControl.grammar = grammar
+
     grammar.rules = {
 
         'G': SetSampler(0, G_1),
@@ -83,8 +86,59 @@ def planar_graph_grammar():
         'G_dx_dx_dx': G_1_dx_dx_dx * G + G_1_dx_dx * G_dx + G_1_dx_dx * G_dx + G_1_dx * G_dx_dx
 
     }
-    grammar.set_builder(['G', 'G_dx', 'G_dx_dx'], PlanarGraphBuilder())
-
+    grammar.set_builder(
+        ['G', 'G_dx', 'G_dx_dx', 'G_dx_dx_dx'], PlanarGraphBuilder())
 
     return grammar
 
+
+if __name__ == '__main__':
+    import matplotlib.pyplot as plt
+    from planar_graph_sampler.evaluations_planar_graph import *
+    from timeit import default_timer as timer
+    from framework.evaluation_oracle import EvaluationOracle
+
+    oracle = EvaluationOracle(my_evals_100)
+    BoltzmannSamplerBase.oracle = oracle
+    BoltzmannSamplerBase.debug_mode = False
+
+    start = timer()
+    grammar = planar_graph_grammar()
+    grammar.init()
+    symbolic_x = 'x'
+    symbolic_y = 'y'
+    sampled_class = 'G_dx_dx_dx'
+    # symbolic_x = 'x*G_1_dx(x,y)'
+    # symbolic_y = 'D(x*G_1_dx(x,y),y)'
+    # sampled_class = 'K'
+    # print(grammar.collect_oracle_queries(sampled_class, symbolic_x, symbolic_y))
+    grammar.precompute_evals(sampled_class, symbolic_x, symbolic_y)
+    end = timer()
+    print("Time init: {}".format(end - start))
+
+    try:
+        print("expected avg. size: {}\n".format(oracle.get_expected_l_size(sampled_class, symbolic_x, symbolic_y)))
+    except BoltzmannFrameworkError:
+        pass
+
+    # random.seed(0)
+    # boltzmann_framework_random_gen.seed(13)
+
+    l_sizes = []
+    i = 0
+    samples = 10000000
+    start = timer()
+    while i < samples:
+        obj = grammar.sample_iterative(sampled_class, symbolic_x, symbolic_y)
+        l_sizes.append(obj.l_size)
+        if obj.l_size > 100:
+            print(obj.l_size)
+        i += 1
+        # if obj.l_size == 0:
+        #     G = comps_to_nx_graph(obj)
+        #     nx.draw(G)
+        #     plt.show()
+    end = timer()
+    print()
+    print("avg. size: {}".format(sum(l_sizes) / len(l_sizes)))
+    print("time: {}".format(end - start))

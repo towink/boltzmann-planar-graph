@@ -159,7 +159,7 @@ class HalfEdgeGraph(CombinatorialClass):
         connectivity_dict = nx.k_components(self.to_networkx_graph())
         return len(connectivity_dict[k][0]) == self.number_of_nodes
 
-    def to_planar_embedding(self):
+    def to_planar_embedding(self, relabel=True):
         """Converts to nx.PlanarEmbedding.
 
         Returns
@@ -178,6 +178,8 @@ class HalfEdgeGraph(CombinatorialClass):
                     continue
                 embedding.add_half_edge_ccw(node, he.opposite.node_nr, reference_neighbour)
                 reference_neighbour = he.opposite.node_nr
+        if relabel:
+            relabel_networkx(embedding)
         return embedding
 
     def to_networkx_graph(self, include_unpaired=False, relabel=True):

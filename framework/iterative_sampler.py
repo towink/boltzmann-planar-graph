@@ -12,6 +12,9 @@ class _IterativeSampler(object):
     def __init__(self, sampler, grammar, is_restartable=False):
         self.sampler = sampler
         self.grammar = grammar
+
+        # self.is_restartable = True
+        # self.sample = self.sample_with_restart_check
         self.is_restartable = is_restartable
         if is_restartable:
             self.sample = self.sample_with_restart_check
@@ -19,17 +22,22 @@ class _IterativeSampler(object):
     class _ResultStack(list):
         """Modified stack that keeps track of the total l-size it contains."""
 
-        def __init__(self):
+        def __init__(self, grammar):
             self.l_size = 0
+            self.grammar = grammar
+            # print()
 
         def append(self, obj):
             list.append(self, obj)
-            # self.l_size += obj.l_size
+            self.l_size += obj.l_size
             # print(self.l_size)
+            if self.l_size > 1000:
+                # self.grammar.restart_sampler()
+                pass
 
         def pop(self, **kwargs):
             obj = list.pop(self)
-            # self.l_size -= obj.l_size
+            self.l_size -= obj.l_size
             return obj
 
     def sample_with_restart_check(self, x=None, y=None, max_size=1000000, abs_tolerance=0):
@@ -47,7 +55,7 @@ class _IterativeSampler(object):
         # Main stack.
         stack = [self.sampler]
         # Stack that holds the intermediate sampling results.
-        # result_stack = self._ResultStack()
+        # result_stack = self._ResultStack(self.grammar)
         result_stack = []
         # The previously visited node in the decomposition tree.
         prev = None
@@ -64,7 +72,8 @@ class _IterativeSampler(object):
                 # print("Restarting ...")
                 self.grammar._restart_flag = False
                 stack = [self.sampler]
-                result_stack = self._ResultStack()
+                # result_stack = self._ResultStack(self.grammar)
+                result_stack = []
                 prev = None
                 continue
 

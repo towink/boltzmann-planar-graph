@@ -71,7 +71,7 @@ class EvaluationOracle(object):
     def get_best_oracle_for_size(size, graph_evals):
         """Returns the best fitting oracle.
         
-        This is choosen based on the sampling size. 
+        This is chosen based on the sampling size.
         The next bigger evaluations are chosen to sample more bigger graphs.
         
         Parameters

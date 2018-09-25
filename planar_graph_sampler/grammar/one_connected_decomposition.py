@@ -180,7 +180,7 @@ if __name__ == '__main__':
     from timeit import default_timer as timer
     from framework.settings_global import Stats
 
-    oracle = EvaluationOracle(my_evals_100)
+    oracle = EvaluationOracle(my_evals_1000)
     BoltzmannSamplerBase.oracle = oracle
     BoltzmannSamplerBase.debug_mode = False
 
@@ -189,7 +189,7 @@ if __name__ == '__main__':
     grammar.init()
     symbolic_x = 'x'
     symbolic_y = 'y'
-    sampled_class = 'G_1_dx'
+    sampled_class = 'G_1_dx_dx_dx'
     # print(grammar.collect_oracle_queries(sampled_class, symbolic_x, symbolic_y))
     grammar.precompute_evals(sampled_class, symbolic_x, symbolic_y)
     end = timer()
@@ -205,7 +205,7 @@ if __name__ == '__main__':
 
     l_sizes = []
     i = 0
-    samples = 1000
+    samples = 100
     start = timer()
     while i < samples:
         obj = grammar.sample_iterative(sampled_class, symbolic_x, symbolic_y)

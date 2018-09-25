@@ -155,6 +155,7 @@ def binary_tree_grammar():
     R_b_head_dx = AliasSampler('R_b_head_dx')
     R_w_head_dx = AliasSampler('R_w_head_dx')
     Bij = BijectionSampler
+    Rej = RejectionSampler
     Trans = TransformationSampler
     Hook = HookSampler
     DxFromDy = LDerFromUDerSampler

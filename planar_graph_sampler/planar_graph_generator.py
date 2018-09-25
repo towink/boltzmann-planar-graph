@@ -15,11 +15,12 @@
 import math
 import multiprocessing as multiproc
 
-from planar_graph_sampler.grammar.planar_graph_decomposition import planar_graph_grammar, comps_to_planar_embedding
+from planar_graph_sampler.grammar.planar_graph_decomposition import \
+    planar_graph_grammar, comps_to_nx_planar_embedding, comps_to_nx_graph
 from framework.evaluation_oracle import EvaluationOracle
 from framework.generic_samplers import BoltzmannSamplerBase
 from framework.generic_classes import SetClass
-from planar_graph_sampler.evaluations_planar_graph import planar_graph_evals
+from planar_graph_sampler.evaluations_planar_graph import *
 import networkx as nx
 import datetime
 
@@ -40,22 +41,26 @@ class PlanarGraphGenerator(object):
     n : int
         Number of nodes, must be at least 3
     epsilon : float, optional (default=0.1)
-        Enables approximate size sampling of graphs with number of nodes
-        in the interval [n(1-eps), n(1+eps)]. Set to a value smaller than 1/n for exact size sampling.
+        Enables approximate size sampling of graphs with number of nodes in the
+        interval [n(1-eps), n(1+eps)]. Set to a value smaller than 1/n for
+        exact size sampling.
     require_connected : bool, optional (default=False)
-        Sample from the class of connected planar graphs instead of general planar graphs.
+        Sample from the class of connected planar graphs instead of general
+        planar graphs.
     with_embedding : bool, optional (default=True)
-        If set to True, the generated graphs are returned with an arbitrary planar embedding represented as
-        an nx.PlanarEmbedding object. Otherwise an nx.Graph object is returned.
+        If set to True, the generated graphs are returned with an arbitrary
+        planar embedding represented as an nx.PlanarEmbedding object.
+        Otherwise an nx.Graph object is returned.
     allow_multiproc : bool, optional (default=False)
         Allows usage of the multiprocessing module for parallel sampling.
 
     Returns
     -------
     G : Graph
-        Planar graph drawn uniformly at random. The nodes are labeled with consecutive integers
-        starting from 1. If `with_embedding` is set to ``True``, an ``nx.PlanarEmbedding`` object is returned,
-        otherwise ``nx.Graph``.
+        Planar graph drawn uniformly at random. The nodes are labeled with
+        consecutive integers starting from 1. If `with_embedding` is set to
+        `True`, an ``nx.PlanarEmbedding`` object is returned, otherwise
+        ``nx.Graph``.
 
     Notes
     -----
@@ -91,7 +96,10 @@ class PlanarGraphGenerator(object):
             self.sample = self._sample_single_proc
 
         # Set up the oracle and grammar for sampling.
-        BoltzmannSamplerBase.oracle = EvaluationOracle.get_best_oracle_for_size(n, planar_graph_evals)
+        # BoltzmannSamplerBase.oracle = \
+        #    EvaluationOracle.get_best_oracle_for_size(n, planar_graph_evals)
+        # TODO Implement the choice of values.
+        BoltzmannSamplerBase.oracle = EvaluationOracle(my_evals_1000)
         self._grammar = planar_graph_grammar()
         self._grammar.init()
         self._grammar.precompute_evals('G_dx_dx_dx', 'x', 'y')
@@ -103,25 +111,37 @@ class PlanarGraphGenerator(object):
 
     def _sample_single_proc(self):
         if self._require_connected:
-            sampled_class = 'G_1_dx_dx_dx'
+            while True:
+                half_edge_graph = self._grammar.sample_iterative(
+                    'G_1_dx_dx_dx').underive_all()
+                if self._lower <= half_edge_graph.number_of_nodes <= self._upper:
+                    if self._with_embedding:
+                        return half_edge_graph.to_planar_embedding(relabel=False)
+                    else:
+                        return half_edge_graph.to_networkx_graph(relabel=True)
         else:
-            sampled_class = 'G_dx_dx_dx'
-        while True:
-            half_edge_graph = self._grammar.sample_iterative(sampled_class).underive_all()
-            if self._lower <= half_edge_graph.number_of_nodes() <= self._upper:
-                if self._with_embedding:
-                    # TODO Relabel the nodes.
-                    return half_edge_graph.to_planar_embedding()
-                else:
-                    return half_edge_graph.to_networkx_graph(relabel=True)
+            while True:
+                generic_set = self._grammar.sample_iterative(
+                    'G_dx_dx_dx')
+                if self._lower <= generic_set.l_size + 3 <= self._upper:
+                    if self._with_embedding:
+                        return comps_to_nx_planar_embedding(generic_set)
+                    else:
+                        return comps_to_nx_graph(generic_set)
 
     def _sample_multiproc(self):
         cpu_count = multiproc.cpu_count()
         processes_queue = multiproc.Queue()
 
-        processes = [multiproc.Process(
-            target=self._sample_single_proc,
-            args=self) for _ in range(cpu_count)]
+        def multiproc_target_func(self, queue):
+            res = self._sample_single_proc()
+            queue.put(res)
+
+        processes = [
+            multiproc.Process(
+                target=multiproc_target_func,
+                args=(self, processes_queue))
+            for _ in range(cpu_count)]
 
         for p in processes:
             p.daemon = True
@@ -133,3 +153,20 @@ class PlanarGraphGenerator(object):
         for p in processes:
             p.terminate()
         return result
+
+
+if __name__ == "__main__":
+    generator = PlanarGraphGenerator(
+        1000, require_connected=True, with_embedding=False)
+
+    while True:
+        G = generator.sample()
+        print(G.number_of_edges() / G.number_of_nodes())
+
+        assert nx.check_planarity(G)
+
+        # import matplotlib.pyplot as plt
+        # # pos = nx.combinatorial_embedding_to_pos(G, fully_triangulate=False)
+        # nx.draw(G, with_labels=True)
+        # plt.show()
+
