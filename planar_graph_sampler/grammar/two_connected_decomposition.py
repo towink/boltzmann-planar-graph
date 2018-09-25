@@ -16,8 +16,8 @@ from __future__ import division
 
 from framework.evaluation_oracle import EvaluationOracle
 from framework.generic_samplers import *
-from framework.decomposition_grammar import DecompositionGrammar, AliasSampler
-from framework.generic_samplers import BoltzmannSamplerBase
+from framework.decomposition_grammar import DecompositionGrammar
+from framework.generic_samplers import BoltzmannSamplerBase, AliasSampler
 from planar_graph_sampler.grammar.binary_tree_decomposition import EarlyRejectionControl
 
 from planar_graph_sampler.grammar.grammar_utils import Counter, divide_by_2, to_u_derived_class

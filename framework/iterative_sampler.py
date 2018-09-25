@@ -1,5 +1,6 @@
 from framework.generic_classes import BoltzmannFrameworkError
 
+
 class _IterativeSampler(object):
     """
 
@@ -40,7 +41,7 @@ class _IterativeSampler(object):
             self.l_size -= obj.l_size
             return obj
 
-    def sample_with_restart_check(self, x=None, y=None, max_size=1000000, abs_tolerance=0):
+    def sample_with_restart_check(self, max_size=1000000, abs_tolerance=0):
         """Invokes the iterative sampler for the given symbolic parameters.
 
         Parameters
@@ -60,9 +61,6 @@ class _IterativeSampler(object):
         # The previously visited node in the decomposition tree.
         prev = None
 
-        stack_append = stack.append
-        stack_pop = stack.pop
-
         while stack:
 
             # Check if the sampler should be restarted.
@@ -80,7 +78,7 @@ class _IterativeSampler(object):
             # Get top of stack.
             curr = stack[-1]
 
-            curr.sample_iterative(stack, result_stack, prev, self.grammar, stack_append, stack_pop)
+            curr.sample_iterative(stack, result_stack, prev, self.grammar)
 
             prev = curr
 
@@ -88,7 +86,7 @@ class _IterativeSampler(object):
         assert result_stack[0] is not None
         return result_stack[0]
 
-    def sample(self, x=None, y=None, max_size=1000000, abs_tolerance=0):
+    def sample(self, max_size=1000000, abs_tolerance=0):
         """Invokes the iterative sampler for the given symbolic parameters.
 
         Parameters
@@ -108,15 +106,12 @@ class _IterativeSampler(object):
         # The previously visited node in the decomposition tree.
         prev = None
 
-        stack_append = stack.append
-        stack_pop = stack.pop
-
         while stack:
 
             # Get top of stack.
             curr = stack[-1]
 
-            curr.sample_iterative(stack, result_stack, prev, self.grammar, stack_append, stack_pop)
+            curr.sample_iterative(stack, result_stack, prev, self.grammar)
 
             prev = curr
 

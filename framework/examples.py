@@ -18,7 +18,7 @@ import math
 from framework.decomposition_grammar import *
 from framework.evaluation_oracle import EvaluationOracle
 
-from framework.generic_samplers import BoltzmannSamplerBase
+from framework.generic_samplers import BoltzmannSamplerBase, AliasSampler
 
 
 def dummy_sampling():

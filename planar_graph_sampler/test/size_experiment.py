@@ -14,11 +14,11 @@
 
 from timeit import default_timer as timer
 
-from framework.decomposition_grammar import DecompositionGrammar, AliasSampler
+from framework.decomposition_grammar import DecompositionGrammar
 from framework.generic_samplers import *
 from framework.generic_classes import DummyClass
 from framework.class_builder import DummyBuilder
-from framework.generic_samplers import BoltzmannSamplerBase
+from framework.generic_samplers import BoltzmannSamplerBase, AliasSampler
 from framework.utils import bern
 
 from planar_graph_sampler.evaluations_planar_graph import *

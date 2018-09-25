@@ -16,9 +16,9 @@ from __future__ import division
 import math
 
 from framework.class_builder import CombinatorialClassBuilder, DummyBuilder
-from framework.decomposition_grammar import DecompositionGrammar, AliasSampler
+from framework.decomposition_grammar import DecompositionGrammar
 from framework.generic_samplers import *
-from framework.generic_samplers import BoltzmannSamplerBase
+from framework.generic_samplers import BoltzmannSamplerBase, AliasSampler
 from framework.utils import bern
 
 from planar_graph_sampler.grammar.grammar_utils import divide_by_2, underive, to_l_derived_class, to_u_derived_class

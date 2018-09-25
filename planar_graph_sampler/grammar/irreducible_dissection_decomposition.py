@@ -13,9 +13,9 @@
 #           Tobias Winkler <tobias.winkler1@rwth-aachen.de>
 
 from framework.generic_samplers import *
-from framework.decomposition_grammar import DecompositionGrammar, AliasSampler
+from framework.decomposition_grammar import DecompositionGrammar
 from framework.evaluation_oracle import EvaluationOracle
-from framework.generic_samplers import BoltzmannSamplerBase
+from framework.generic_samplers import BoltzmannSamplerBase, AliasSampler
 from planar_graph_sampler.operations.closure import Closure
 from planar_graph_sampler.combinatorial_classes import BinaryTree
 from planar_graph_sampler.combinatorial_classes.dissection import IrreducibleDissection

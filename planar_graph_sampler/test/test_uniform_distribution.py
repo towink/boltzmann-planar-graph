@@ -39,7 +39,7 @@ def sample_graphs_and_count(sampled_class, x, y, counting_seq, offset=1, factor=
     start = timer()
 
     while any(map(lambda pair: pair[0] < pair[1], zip(sample_count, target_count))):
-        obj = grammar.sample_iterative(sampled_class, x, y).underive_all()
+        obj = grammar.sample_iterative(sampled_class).underive_all()
         if isinstance(obj, SetClass):
             obj = SetClass([he_graph.underive_all() for he_graph in obj])
         n = obj.l_size

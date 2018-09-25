@@ -17,9 +17,9 @@ import logging
 from collections import deque
 
 from framework.generic_samplers import *
-from framework.decomposition_grammar import AliasSampler, DecompositionGrammar
+from framework.decomposition_grammar import DecompositionGrammar
 from framework.evaluation_oracle import EvaluationOracle
-from framework.generic_samplers import BoltzmannSamplerBase
+from framework.generic_samplers import BoltzmannSamplerBase, AliasSampler
 
 from planar_graph_sampler.operations.closure import Closure
 from planar_graph_sampler.operations.primal_map import PrimalMap

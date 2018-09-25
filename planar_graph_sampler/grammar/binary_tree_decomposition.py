@@ -15,9 +15,9 @@
 from __future__ import division
 
 from framework.evaluation_oracle import EvaluationOracle
-from framework.decomposition_grammar import DecompositionGrammar, AliasSampler
+from framework.decomposition_grammar import DecompositionGrammar
 from framework.generic_samplers import *
-from framework.generic_samplers import BoltzmannSamplerBase
+from framework.generic_samplers import BoltzmannSamplerBase, AliasSampler
 from framework.utils import bern
 
 from planar_graph_sampler.grammar.grammar_utils import underive, Counter

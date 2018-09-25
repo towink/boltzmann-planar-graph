@@ -12,10 +12,10 @@
 #           Rudi Floren <rudi.floren@gmail.com>
 #           Tobias Winkler <tobias.winkler1@rwth-aachen.de>
 
-from framework.decomposition_grammar import DecompositionGrammar, AliasSampler
+from framework.decomposition_grammar import DecompositionGrammar
 from framework.evaluation_oracle import EvaluationOracle
 from framework.generic_samplers import *
-from framework.generic_samplers import BoltzmannSamplerBase
+from framework.generic_samplers import BoltzmannSamplerBase, AliasSampler
 
 from planar_graph_sampler.grammar.binary_tree_decomposition import EarlyRejectionControl
 from planar_graph_sampler.grammar.grammar_utils import Counter

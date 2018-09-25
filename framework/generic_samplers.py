@@ -15,10 +15,9 @@
 from __future__ import division
 
 from framework.class_builder import DefaultBuilder
-from framework.iterative_sampler import _IterativeSampler
 from framework.generic_classes import *
+from framework.iterative_sampler import _IterativeSampler
 from framework.utils import *
-from framework.settings_global import Settings
 
 
 def return_precomp(func):
@@ -36,17 +35,12 @@ class BoltzmannSamplerBase(object):
 
     Attributes
     ----------
-    oracle: EvaluationOracle
-        The oracle to be used by all instantiations of this class and its subclasses.
-    debug_mode: bool
-        Will perform additional (possibly time consuming) checks when set to True.
-
-    References
-    ----------
-    .. [1] E. Fusy:
-        Uniform Random Sampling of Planar Graphs in Linear Time'
-        ??
-        ??
+    oracle : EvaluationOracle
+        The oracle to be used by all instantiations of this class and its
+        subclasses.
+    debug_mode : bool
+        Will perform additional (possibly time consuming) checks when set to
+        True.
     """
 
     oracle = None
@@ -71,41 +65,38 @@ class BoltzmannSamplerBase(object):
         """
         raise NotImplementedError
 
-    def sample(self, x, y):
-        """Invokes this sampler with the given x and y parameters.
+    def sample_iterative(self, stack, result_stack, prev, grammar):
+        """Called by the iterative sampling process.
 
-        Calls the child-samplers recursively.
+        Do not call directly.
 
         Parameters
         ----------
-        x: str
-            symbolic x argument
-        y: str
-            symbolic y argument
-
-        Returns
-        -------
-        CombinatorialClass
-            The result of the sampling operation.
+        stack : Stack
+        result_stack: Stack
+        prev : BoltzmannSamplerBase
+        grammar : DecompositionGrammar
         """
         raise NotImplementedError
 
     def eval(self, x, y):
-        """Gets the evaluation of the generating function of the class being sampled.
+        """Gets the evaluation of the generating function of the class being
+        sampled.
 
         Possibly queries the oracle directly or indirectly.
 
         Parameters
         ----------
-        x: str
-            symbolic x argument
-        y: str
-            symbolic y argument
+        x : str
+            Symbolic x argument.
+        y : str
+            Symbolic y argument.
 
         Returns
         -------
-        evaluation: float
-            The value of the generating function of the sampled class at the given point.
+        evaluation : float
+            The value of the generating function of the sampled class at the
+            given point.
         """
         raise NotImplementedError
 
@@ -114,40 +105,42 @@ class BoltzmannSamplerBase(object):
 
         Parameters
         ----------
-        x: str
-            symbolic x argument
-        y: str
-            symbolic y argument
+        x : str
+            Symbolic x argument.
+        y : str
+            Symbolic y argument.
         """
         self._precomputed_eval = self.eval(x, y)
 
     def oracle_query_string(self, x, y):
         """String used as key in oracle.
 
-        This is like a 'symbolic evaluation' of the generating function of the class being sampled from this _sampler.
+        This is like a 'symbolic evaluation' of the generating function of the
+        class being sampled from this sampler.
 
         Parameters
         ----------
-        x: str
-            symbolic x argument
-        y: str
-            symbolic y argument
+        x : str
+            Symbolic x argument.
+        y : str
+            Symbolic y argument.
 
         Returns
         -------
-        query_string: str
-            String that may be used to query the oracle for the generating function of the sampled class.
+        query_string : str
+            String that may be used to query the oracle for the generating
+            function of the sampled class.
         """
         raise NotImplementedError
 
     @property
     def builder(self):
-        """Returns the builder registered with this sampler or None.
+        """Returns the builder registered with this sampler or `None`.
 
         Returns
         -------
-        builder: CombinatorialClassBuilder
-            Builder registered with this sampler or None.
+        builder : CombinatorialClassBuilder
+            Builder registered with this sampler or `None`.
         """
         return self._builder
 
@@ -159,7 +152,7 @@ class BoltzmannSamplerBase(object):
 
         Parameters
         ----------
-        builder: CombinatorialClassBuilder
+        builder : CombinatorialClassBuilder
         """
         self._builder = builder
 
@@ -170,8 +163,8 @@ class BoltzmannSamplerBase(object):
 
         Returns
         -------
-        iterator
-            An iterator over all samplers this _sampler depends on.
+        iterable
+            An iterable of all samplers this sampler depends on.
         """
         raise NotImplementedError
 
@@ -180,7 +173,8 @@ class BoltzmannSamplerBase(object):
 
         Parameters
         ----------
-        visitor: object
+        visitor : object
+            The visitor to be applied.
         """
         visitor.visit(self)
         for child in self.get_children():
@@ -191,13 +185,13 @@ class BoltzmannSamplerBase(object):
 
         Parameters
         ----------
-        other: BoltzmannSamplerBase
+        other : BoltzmannSamplerBase
             The right hand side argument.
 
         Returns
         -------
         BoltzmannSamplerBase
-            The sum-_sampler resulting from this _sampler and the given _sampler.
+            The sum-sampler resulting from this sampler and the given sampler.
         """
         return SumSampler(self, other)
 
@@ -206,83 +200,60 @@ class BoltzmannSamplerBase(object):
 
         Parameters
         ----------
-        other: BoltzmannSamplerBase
+        other : BoltzmannSamplerBase
             The right hand side argument.
 
         Returns
         -------
         BoltzmannSamplerBase
-            The product-_sampler resulting from this _sampler and the given _sampler.
+            The product-sampler resulting from this sampler and the given
+            sampler.
         """
         return ProdSampler(self, other)
 
-    # todo Support all integers.
     def __rmul__(self, other):
-        """Adds (sum construction) a _sampler to itself several times.
+        """Adds (sum construction) a sampler to itself several times.
 
         Parameters
         ----------
-        other: int
-            The left hand side argument, must be either 2 or 3.
+        other : int
+            The left hand side argument.
 
         Returns
         -------
         BoltzmannSamplerBase
-            The _sampler resulting from this operation.
+            The sampler resulting from this operation.
 
         Notes
         -----
         This only affects the generating function but not the outcome.
         """
-        if other == 2:
-            return self + self
-        if other == 3:
-            return self + self + self
-        if other == 4:
-            return self + self + self + self
-        else:
-            raise ValueError("Multiplication with a constant only implemented for integers 2 and 3")
+        return TransformationSampler(
+            self,
+            eval_transform=lambda evl, x, y: other * evl,
+        )
 
-    # todo Support all integers.
     def __pow__(self, power, modulo=None):
-        """Multiplies a _sampler with itself.
+        """Multiplies a sampler with itself.
 
         Parameters
         ----------
-        power: int
+        power : int
             The right hand side argument, must be either 2 or 3.
 
         Returns
         -------
         BoltzmannSamplerBase
-            The _sampler resulting from this operation.
+            The sampler resulting from this operation.
 
         """
+        # TODO Support all integers.
         if power == 2:
             return self * self
         if power == 3:
             return self * self * self
         else:
             raise ValueError("Power only implemented for integers 2 and 3")
-
-    @property
-    def is_prod_sampler(self):
-        return False
-
-    @property
-    def is_sum_sampler(self):
-        return False
-
-    @property
-    def is_atom_sampler(self):
-        return False
-
-    @property
-    def is_alias_sampler(self):
-        return False
-
-    def sample_iterative(self, stack, result_stack, prev, grammar, stack_append, stack_pop):
-        raise NotImplementedError
 
 
 class AtomSampler(BoltzmannSamplerBase):
@@ -296,8 +267,13 @@ class AtomSampler(BoltzmannSamplerBase):
     def sampled_class(self):
         raise NotImplementedError
 
-    def sample(self, x=None, y=None):
+    def sample(self):
         raise NotImplementedError
+
+    def sample_iterative(self, stack, result_stack, prev, grammar):
+        # Atom samplers are the leaves in the decomposition tree.
+        stack.pop()
+        result_stack.append(self.sample())
 
     @return_precomp
     def eval(self, x, y):
@@ -307,17 +283,7 @@ class AtomSampler(BoltzmannSamplerBase):
         raise NotImplementedError
 
     def get_children(self):
-        # An atom does not have any children.
-        return ()
-
-    @property
-    def is_atom_sampler(self):
-        return True
-
-    def sample_iterative(self, stack, result_stack, prev, grammar, stack_append, stack_pop):
-        # Atom samplers are the leaves in the decomposition tree.
-        stack.pop()
-        result_stack.append(self.sample())
+        return self.children
 
 
 class ZeroAtomSampler(AtomSampler):
@@ -330,8 +296,8 @@ class ZeroAtomSampler(AtomSampler):
     def sampled_class(self):
         return '1'
 
-    def sample(self, x=None, y=None):
-            return self._builder.zero_atom()
+    def sample(self):
+        return self._builder.zero_atom()
 
     def eval(self, x, y):
         # See 3.2, instead of querying '1' to the oracle we just return it.
@@ -351,7 +317,7 @@ class LAtomSampler(AtomSampler):
     def sampled_class(self):
         return 'L'
 
-    def sample(self, x=None, y=None):
+    def sample(self):
         return self._builder.l_atom()
 
     def oracle_query_string(self, x, y):
@@ -369,7 +335,7 @@ class UAtomSampler(AtomSampler):
     def sampled_class(self):
         return 'U'
 
-    def sample(self, x=None, y=None):
+    def sample(self):
         return self._builder.u_atom()
 
     def oracle_query_string(self, x, y):
@@ -379,7 +345,7 @@ class UAtomSampler(AtomSampler):
 
 class BinarySampler(BoltzmannSamplerBase):
     """
-    Abstract base class for a _sampler that depends on exactly 2 other samplers.
+    Abstract base class for a sampler that depends on exactly 2 other samplers.
 
     Parameters
     ----------
@@ -390,13 +356,13 @@ class BinarySampler(BoltzmannSamplerBase):
     op_symbol: str
         The string representation of the implemented operator.
     """
-
     __slots__ = 'lhs', 'rhs', '_op_symbol'
 
     def __init__(self, lhs, rhs, op_symbol):
         super(BinarySampler, self).__init__()
         self.lhs = lhs
-        # While this is okay for the recursive sampling it causes problems in the iterative version.
+        # If the arguments are the same object then we make a copy to be able
+        # distinguish them in the iterative sampler.
         if lhs is rhs:
             from copy import copy
             rhs = copy(lhs)
@@ -406,9 +372,10 @@ class BinarySampler(BoltzmannSamplerBase):
 
     @property
     def sampled_class(self):
-        return "({}{}{})".format(self.lhs.sampled_class, self._op_symbol, self.rhs.sampled_class)
+        return "({}{}{})".format(
+            self.lhs.sampled_class, self._op_symbol, self.rhs.sampled_class)
 
-    def sample(self, x, y):
+    def sample_iterative(self, stack, result_stack, prev, grammar):
         raise NotImplementedError
 
     def eval(self, x, y):
@@ -433,22 +400,13 @@ class SumSampler(BinarySampler):
     def __init__(self, lhs, rhs):
         super(SumSampler, self).__init__(lhs, rhs, '+')
 
-    def sample(self, x, y):
-        if bern(self.lhs.eval(x, y) / self.eval(x, y)):
-            return self.lhs.sample(x, y)
-        else:
-            return self.rhs.sample(x, y)
-
     @return_precomp
     def eval(self, x, y):
-        # For the sum class (disjoint union) the generating function is the sum of the 2 generating functions.
+        # For the sum class (disjoint union) the generating function is the sum
+        # of the two generating functions.
         return self.lhs.eval(x, y) + self.rhs.eval(x, y)
 
-    @property
-    def is_sum_sampler(self):
-        return True
-
-    def sample_iterative(self, stack, result_stack, prev, grammar, stack_append, stack_pop):
+    def sample_iterative(self, stack, result_stack, prev, grammar):
         if prev is None or self in prev.children:
             if bern(self.lhs._precomputed_eval / self._precomputed_eval):
                 stack.append(self.lhs)
@@ -464,13 +422,10 @@ class ProdSampler(BinarySampler):
     def __init__(self, lhs, rhs):
         super(ProdSampler, self).__init__(lhs, rhs, '*')
 
-    def sample(self, x, y):
-        # todo
-        return self._builder.product(self.lhs.sample(x, y), self.rhs.sample(x, y))
-
     @return_precomp
     def eval(self, x, y):
-        # For the product class (cartesian prod.) the generating function is the product of the 2 generating functions.
+        # For the product class (cartesian prod.) the generating function is
+        # the product of the two generating functions.
         return self.lhs.eval(x, y) * self.rhs.eval(x, y)
 
     def oracle_query_string(self, x, y):
@@ -480,11 +435,7 @@ class ProdSampler(BinarySampler):
             self.rhs.oracle_query_string(x, y)
         )
 
-    @property
-    def is_prod_sampler(self):
-        return True
-
-    def sample_iterative(self, stack, result_stack, prev, grammar, stack_append, stack_pop):
+    def sample_iterative(self, stack, result_stack, prev, grammar):
         if prev is None or self in prev.children:
             stack.append(self.lhs)
         elif self.lhs is prev:
@@ -502,15 +453,11 @@ class ProdSampler(BinarySampler):
 
 
 class LSubsSampler(BinarySampler):
-    """Samples from the class resulting from substituting the l-atoms of lhs with objects of rhs."""
+    """Samples from the class resulting from substituting the l-atoms of lhs
+    with objects of rhs."""
 
     def __init__(self, lhs, rhs):
         super(LSubsSampler, self).__init__(lhs, rhs, ' lsubs ')
-
-    def sample(self, x, y):
-        gamma = self.lhs.sample(self.rhs.oracle_query_string(x, y), y)
-        gamma = gamma.replace_l_atoms(self.rhs, x, y)
-        return gamma
 
     @return_precomp
     def eval(self, x, y):
@@ -518,15 +465,17 @@ class LSubsSampler(BinarySampler):
 
     def oracle_query_string(self, x, y):
         #  A(B(x,y),y) where A = lhs and B = rhs (see 3.2).
-        return self.lhs.oracle_query_string(self.rhs.oracle_query_string(x, y), y)
+        return self.lhs.oracle_query_string(
+            self.rhs.oracle_query_string(x, y), y)
 
-    def sample_iterative(self, stack, result_stack, prev, grammar, stack_append, stack_pop):
+    def sample_iterative(self, stack, result_stack, prev, grammar):
         if prev is None or self in prev.get_children():
             # Sample from lhs with substituted x.
             stack.append(self.lhs)
         else:
             stack.pop()
-            # Get the object in which the l-atoms have to be replaced from the result stack.
+            # Get the object in which the l-atoms have to be replaced from the
+            # result stack.
             core_object = result_stack.pop()
             # Replace the atoms and push result.
             sampler = _IterativeSampler(self.rhs, grammar)
@@ -535,15 +484,11 @@ class LSubsSampler(BinarySampler):
 
 
 class USubsSampler(BinarySampler):
-    """Samples from the class resulting from substituting the u-atoms of lhs with objects of rhs."""
+    """Samples from the class resulting from substituting the u-atoms of lhs
+    with objects of rhs."""
 
     def __init__(self, lhs, rhs):
         super(USubsSampler, self).__init__(lhs, rhs, ' usubs ')
-
-    def sample(self, x, y):
-        gamma = self.lhs.sample(x, self.rhs.oracle_query_string(x, y))
-        gamma = gamma.replace_u_atoms(self.rhs, x, y)
-        return gamma
 
     @return_precomp
     def eval(self, x, y):
@@ -551,14 +496,16 @@ class USubsSampler(BinarySampler):
 
     def oracle_query_string(self, x, y):
         # A(x,B(x,y)) where A = lhs and B = rhs (see 3.2).
-        return self.lhs.oracle_query_string(x, self.rhs.oracle_query_string(x, y))
+        return self.lhs.oracle_query_string(
+            x, self.rhs.oracle_query_string(x, y))
 
-    def sample_iterative(self, stack, result_stack, prev, grammar, stack_append, stack_pop):
-        if prev is None or self in prev.get_children():
+    def sample_iterative(self, stack, result_stack, prev, grammar):
+        if prev is None or self in prev.children:
             stack.append(self.lhs)
         else:
             stack.pop()
-            # Get the object in which the u-atoms have to be replaced from the result stack.
+            # Get the object in which the u-atoms have to be replaced from the
+            # result stack.
             core_object = result_stack.pop()
             # Recover the old y from the stack.
             # y = result_stack.pop()
@@ -570,12 +517,12 @@ class USubsSampler(BinarySampler):
 
 class UnarySampler(BoltzmannSamplerBase):
     """
-    Abstract base class for samplers that depend exactly on one other _sampler.
+    Abstract base class for samplers that depend exactly on one other sampler.
 
     Parameters
     ----------
-    sampler: BoltzmannSamplerBase
-        The _sampler this _sampler depends on.
+    sampler : BoltzmannSamplerBase
+        The sampler this sampler depends on.
     """
 
     __slots__ = '_sampler'
@@ -589,7 +536,7 @@ class UnarySampler(BoltzmannSamplerBase):
     def sampled_class(self):
         raise NotImplementedError
 
-    def sample(self, x, y):
+    def sample_iterative(self, stack, result_stack, prev, grammar):
         raise NotImplementedError
 
     def eval(self, x, y):
@@ -599,26 +546,28 @@ class UnarySampler(BoltzmannSamplerBase):
         raise NotImplementedError
 
     def get_children(self):
-        return self._sampler,  # Return as a 1-tuple.
+        return self.children
 
 
 class SetSampler(UnarySampler):
     """
     Samples a set of elements from the underlying class.
 
-    A set has no order and no duplicate elements. The underlying class may not contain objects with l-size 0. Otherwise
-    this sampler will not output correct results.
+    A set has no order and no duplicate elements. The underlying class may not
+    contain objects with l-size 0. Otherwise this sampler will not output
+    correct results!
 
     Parameters
     ----------
-    d: int
+    d : int
         The minimum size of the set.
-    sampler: BoltzmannSamplerBase
+    sampler : BoltzmannSamplerBase
         The sampler that produces the elements in the set.
 
     Notes
     -----
-    It is not checked/ensured automatically that object from the underlying class do not have l-size 0.
+    It is not checked/ensured automatically that objects from the underlying
+    class do not have l-size 0.
     """
 
     __slots__ = '_d'
@@ -631,24 +580,21 @@ class SetSampler(UnarySampler):
     def sampled_class(self):
         return "Set_{}({})".format(self._d, self._sampler.sampled_class)
 
-    def draw_k(self, x, y):
-        return pois(self._d, self._sampler.eval(x, y))
-
-    def sample(self, x, y):
-        # todo
-        k = self.draw_k(x, y)
-        return self._builder.set([self._sampler.sample(x, y) for _ in range(k)])
-
     @return_precomp
     def eval(self, x, y):
-        # The generating function of a set class is a tail of the exponential row evaluated at the generating function
-        # of the underlying class (see 3.2).
+        # The generating function of a set class is a tail of the exponential
+        # row evaluated at the generating function of the underlying class
+        # (see 3.2).
         return exp_tail(self._d, self._sampler.eval(x, y))
 
     def oracle_query_string(self, x, y):
-        return "exp_{}({})".format(self._d, self._sampler.oracle_query_string(x, y))
+        return "exp_{}({})".format(
+            self._d, self._sampler.oracle_query_string(x, y))
 
-    def sample_iterative(self, stack, result_stack, prev, grammar, stack_append, stack_pop):
+    def _draw_k(self, x, y):
+        return pois(self._d, self._sampler.eval(x, y))
+
+    def sample_iterative(self, stack, result_stack, prev, grammar):
         # We use recursion here for now.
         stack.pop()
         set_elems_sampler = self._sampler
@@ -663,38 +609,34 @@ class SetSampler(UnarySampler):
 
 class TransformationSampler(UnarySampler):
     """
-    Generic sampler that transforms the the objects sampled from the base class to a new class.
+    Generic sampler that transforms the the objects sampled from the base class
+    to a new class.
 
     For bijections use the base class BijectionSampler.
 
     Parameters
     ----------
-    sampler: BoltzmannSamplerBase
-    f: transformation function, optional (default=id)
-    eval_transform: generating function transformation, optional (default=id)
-    target_class_label: str, optional (default=None)
+    sampler : BoltzmannSamplerBase
+    f : transformation function, optional (default=id)
+    eval_transform : generating function transformation, optional (default=id)
+    target_class_label : str, optional (default=None)
     """
 
-    def __init__(self, sampler, f=None, eval_transform=None, target_class_label=None):
+    def __init__(self, sampler, f=None, eval_transform=None,
+                 target_class_label=None):
         super(TransformationSampler, self).__init__(sampler)
-        self._f = f
+        self.f = f
         self._eval_transform = eval_transform
         if target_class_label is None:
-            # Set a default label for the target class based on the name of the transformation function.
+            # Set a default label for the target class based on the name of the
+            # transformation function.
             if f is not None:
-                self._target_class_label = "{}({})".format(f.__name__, sampler.sampled_class)
+                self._target_class_label = "{}({})".format(
+                    f.__name__, sampler.sampled_class)
+            else:
+                self._target_class_label = sampler.sampled_class
         else:
             self._target_class_label = target_class_label
-
-    @property
-    def transformation(self):
-        """Returns the transformation function."""
-        return self._f
-
-    @transformation.setter
-    def transformation(self, f):
-        """Sets the transformation function."""
-        self._f = f
 
     @property
     def sampled_class(self):
@@ -704,37 +646,27 @@ class TransformationSampler(UnarySampler):
     def sampled_class(self, label):
         self._target_class_label = label
 
-    def sample(self, x, y):
-        if self._f is not None:
-            # Sample from the underlying class and apply the transformation.
-            return self._f(self._sampler.sample(x, y))
-        # Otherwise sample without transformation.
-        return self._sampler.sample(x, y)
-
     @return_precomp
     def eval(self, x, y):
-        # If a transformation of the generating function is given, apply it here.
+        # If a transformation of the generating function is given, apply it.
         if self._eval_transform is not None:
             return self._eval_transform(self._sampler.eval(x, y), x, y)
-        # Otherwise query the oracle because we cannot infer the evaluation in the case of a general transformation.
+        # Otherwise query the oracle because we cannot infer the evaluation in
+        # the case of a general transformation.
         return self.oracle.get(self.oracle_query_string(x, y))
 
     def oracle_query_string(self, x, y):
-        try:
-            return "{}({},{})".format(self.sampled_class, x, y)
-        except AttributeError:
-            # self.sampled_class might be None.
-            raise BoltzmannFrameworkError("No target class label was given or could be inferred")
+        return "{}({},{})".format(self.sampled_class, x, y)
 
-    def sample_iterative(self, stack, result_stack, prev, grammar, stack_append, stack_pop):
-        if prev is None or self in prev.get_children():
+    def sample_iterative(self, stack, result_stack, prev, grammar):
+        if prev is None or self in prev.children:
             stack.append(self._sampler)
         else:
             stack.pop()
             to_transform = result_stack.pop()
             # A transformation may not be given.
-            if self.transformation is not None:
-                result_stack.append(self.transformation(to_transform))
+            if self.f is not None:
+                result_stack.append(self.f(to_transform))
             else:
                 result_stack.append(to_transform)
 
@@ -745,36 +677,19 @@ class BijectionSampler(TransformationSampler):
 
     Parameters
     ----------
-    sampler: BoltzmannSamplerBase
-    f: transformation function
-    target_class_label: str, optional (default=None)
+    sampler : BoltzmannSamplerBase
+    f : transformation function
+    target_class_label : str, optional (default=None)
     """
 
     def __init__(self, sampler, f, target_class_label=None):
-        super(BijectionSampler, self).__init__(sampler, f, None, target_class_label)
-
-    def sample(self, x, y):
-        # Sample from the underlying class and apply the bijection.
-        # In debug_mode check the sizes before and after applying the bijection.
-        if Settings.debug_mode:
-            # l_size/u_size may be not implemented on some classes, in this case the check is ignored.
-            gamma = self._sampler.sample(x, y)
-            try:
-                l_size_before = gamma.l_size
-                u_size_before = gamma.u_size
-                gamma = self._f(gamma)
-                l_size_after = gamma.l_size
-                u_size_after = gamma.u_size
-                assert l_size_before == l_size_after and u_size_before == u_size_after
-                return gamma
-            except NotImplementedError:
-                return self._f(gamma)
-        else:
-            return self._f(self._sampler.sample(x, y))
+        super(BijectionSampler, self).__init__(sampler, f, None,
+                                               target_class_label)
 
     @return_precomp
     def eval(self, x, y):
-        # Since the target class is isomorphic to the underlying class, the evaluation is also the same.
+        # Since the target class is isomorphic to the underlying class, the
+        # evaluation is also the same.
         return self._sampler.eval(x, y)
 
     def oracle_query_string(self, x, y):
@@ -789,9 +704,9 @@ class HookSampler(BijectionSampler):
 
     Parameters
     ----------
-    before: function
+    before : function
         Code executed before the underlying sampler is called.
-    after: function, optional (default=None)
+    after : function, optional (default=None)
         Code executed after the underlying sampler has terminated.
     """
 
@@ -800,12 +715,8 @@ class HookSampler(BijectionSampler):
         self.before = before
         self.after = after
 
-    def sample(self, x, y):
-        # Recursive sampler not implemented.
-        raise NotImplementedError
-
-    def sample_iterative(self, stack, result_stack, prev, grammar, stack_append, stack_pop):
-        if prev is None or self in prev.get_children():
+    def sample_iterative(self, stack, result_stack, prev, grammar):
+        if prev is None or self in prev.children:
             stack.append(self._sampler)
             # Execute the before-hook.
             self.before()
@@ -817,28 +728,16 @@ class HookSampler(BijectionSampler):
 
 
 class RestartableSampler(BijectionSampler):
-    """
-    Wrapper to indicate that a sampler can be restarted.
-
-    Parameters
-    ----------
-    before: function
-        Code executed before the underlying sampler is called.
-    after: function, optional (default=None)
-        Code executed after the underlying sampler has terminated.
-    """
+    """Wrapper to indicate that a sampler can be restarted."""
 
     def __init__(self, sampler):
         super(RestartableSampler, self).__init__(sampler, None, None)
 
-    def sample(self, x, y):
-        # Recursive sampler not implemented.
-        raise NotImplementedError
-
-    def sample_iterative(self, stack, result_stack, prev, grammar, stack_append, stack_pop):
+    def sample_iterative(self, stack, result_stack, prev, grammar):
         stack.pop()
         wrapped_sampler = self._sampler
-        restartable_sampler = _IterativeSampler(wrapped_sampler, grammar, is_restartable=True)
+        restartable_sampler = _IterativeSampler(wrapped_sampler, grammar,
+                                                is_restartable=True)
         obj = restartable_sampler.sample()
         result_stack.append(obj)
 
@@ -849,18 +748,20 @@ class RejectionSampler(TransformationSampler):
 
     Parameters
     ----------
-    sampler: BoltzmannSamplerBase
+    sampler : BoltzmannSamplerBase
         Sampler of the underlying class.
-    is_acceptable: function
+    is_acceptable : function
         Criterion for accepting an object from the underlying class.
-    eval_transform: function, optional (default=None)
+    eval_transform : function, optional (default=None)
         Optional transformation of the evaluation function.
-    target_class_label: str, optional (default=None)
+    target_class_label : str, optional (default=None)
         Optional label of the sampled class.
     """
 
-    def __init__(self, sampler, is_acceptable, eval_transform=None, target_class_label=None):
-        super(RejectionSampler, self).__init__(sampler, is_acceptable, eval_transform, target_class_label)
+    def __init__(self, sampler, is_acceptable, eval_transform=None,
+                 target_class_label=None):
+        super(RejectionSampler, self).__init__(
+            sampler, is_acceptable, eval_transform, target_class_label)
         self._rejections_count = 0
 
     @property
@@ -869,26 +770,17 @@ class RejectionSampler(TransformationSampler):
 
         Returns
         -------
-        rejections_count: int
+        rejections_count : int
             Number of rejections in the last sampling operation.
         """
-        return self._rejections_count
+        raise NotImplementedError
 
-    def sample(self, x, y):
-        self._rejections_count = 0
-        gamma = self._sampler.sample(x, y)
-        is_acceptable = self._f
-        while not is_acceptable(gamma):
-            self._rejections_count += 1
-            gamma = self._sampler.sample(x, y)
-        return gamma
-
-    def sample_iterative(self, stack, result_stack, prev, grammar, stack_append, stack_pop):
-        if prev is None or self in prev.get_children():
+    def sample_iterative(self, stack, result_stack, prev, grammar):
+        if prev is None or self in prev.children:
             stack.append(self._sampler)
         else:
             obj_to_check = result_stack.pop()
-            is_acceptable = self.transformation  # This is kind of weird ...
+            is_acceptable = self.f
             if is_acceptable(obj_to_check):
                 stack.pop()
                 result_stack.append(obj_to_check)
@@ -902,9 +794,9 @@ class UDerFromLDerSampler(TransformationSampler):
 
     Parameters
     ----------
-    sampler: BoltzmannSamplerBase
+    sampler : BoltzmannSamplerBase
         A sampler of the l-derived class. Must sample an LDerivedClass.
-    alpha_u_l: float
+    alpha_u_l : float
         Limit value of u-size/l-size of the underlying class.
     """
 
@@ -917,26 +809,22 @@ class UDerFromLDerSampler(TransformationSampler):
         super(UDerFromLDerSampler, self).__init__(sampler, None, None, label)
         self._alpha_u_l = alpha_u_l
 
-    def sample(self, x, y):
-        # See lemma 6 for this rejection technique.
-        while True:
-            gamma = self._sampler.sample(x, y)
-            p = (1 / self._alpha_u_l) * (gamma.u_size / (gamma.l_size + 1))
-            if bern(p):
-                return UDerivedClass(gamma.base_class_object)
-
-    def sample_iterative(self, stack, result_stack, prev, grammar, stack_append, stack_pop):
-        if prev is None or self in prev.get_children():
+    def sample_iterative(self, stack, result_stack, prev, grammar):
+        if prev is None or self in prev.children:
             stack.append(self._sampler)
         else:
             obj_to_check = result_stack.pop()
 
             def is_acceptable(gamma):
-                return bern((1 / self._alpha_u_l) * (gamma.u_size / (gamma.l_size + 1)))
+                # See Lemma 6.
+                return bern(
+                    (1 / self._alpha_u_l) * (gamma.u_size / (gamma.l_size + 1))
+                )
 
             if is_acceptable(obj_to_check):
                 stack.pop()
-                result_stack.append(UDerivedClass(obj_to_check.base_class_object))
+                result_stack.append(
+                    UDerivedClass(obj_to_check.base_class_object))
             else:
                 stack.append(self._sampler)
 
@@ -947,11 +835,10 @@ class LDerFromUDerSampler(TransformationSampler):
 
     Parameters
     ----------
-    sampler: BoltzmannSamplerBase
+    sampler : BoltzmannSamplerBase
         A sampler of the u-derived class. Must sample a UDerivedClass.
-    alpha_l_u: float
+    alpha_l_u : float
         Limit value of l-size/u-size of the underlying class.
-
     """
 
     def __init__(self, sampler, alpha_l_u):
@@ -963,24 +850,122 @@ class LDerFromUDerSampler(TransformationSampler):
         super(LDerFromUDerSampler, self).__init__(sampler, None, None, label)
         self._alpha_l_u = alpha_l_u
 
-    def sample(self, x, y):
-        while True:
-            gamma = self._sampler.sample(x, y)
-            p = (1 / self._alpha_l_u) * (gamma.l_size / (gamma.u_size + 1))
-            if bern(p):
-                return LDerivedClass(gamma.base_class_object)
-
-    def sample_iterative(self, stack, result_stack, prev, grammar, stack_append, stack_pop):
-        if prev is None or self in prev.get_children():
+    def sample_iterative(self, stack, result_stack, prev, grammar):
+        if prev is None or self in prev.children:
             stack.append(self._sampler)
         else:
             obj_to_check = result_stack.pop()
 
             def is_acceptable(gamma):
-                return bern((1 / self._alpha_l_u) * (gamma.l_size / (gamma.u_size + 1)))
+                return bern(
+                    (1 / self._alpha_l_u) * (gamma.l_size / (gamma.u_size + 1))
+                )
 
             if is_acceptable(obj_to_check):
                 stack.pop()
-                result_stack.append(LDerivedClass(obj_to_check.base_class_object))
+                result_stack.append(
+                    LDerivedClass(obj_to_check.base_class_object))
             else:
                 stack.append(self._sampler)
+
+
+class AliasSampler(BoltzmannSamplerBase):
+    """
+    Sampler defined by a rule in a decomposition grammar.
+
+    The rule can contain the same alias sampler itself, allowing the
+    implementation of recursive decompositions. From a different point of view,
+    an alias sampler is a non-terminal symbol in the decomposition grammar.
+
+    Parameters
+    ----------
+    alias : str
+    """
+
+    __slots__ = '_alias', '_grammar', '_referenced_sampler'
+
+    def __init__(self, alias):
+        super(AliasSampler, self).__init__()
+        self._alias = alias
+        self._grammar = None
+        self._referenced_sampler = None  # The referenced sampler.
+        self.children = None
+
+    def _grammar_not_initialized_error_msg(self):
+        return "{}: you have to set the grammar this AliasSampler belongs to" \
+               " before using it".format(self._alias)
+
+    @property
+    def is_recursive(self):
+        """Checks if this AliasSampler belongs to a recursive rule
+        (i.e. calls itself directly or indirectly).
+
+        Returns
+        -------
+        bool
+            True iff this sampler corresponds to a recursive rule in the
+            grammar.
+        """
+        return self._grammar.is_recursive_rule(self._alias)
+
+    @property
+    def grammar(self):
+        """Returns the grammar this alias sampler belongs to.
+
+        Returns
+        -------
+        grammar: DecompositionGrammar
+        """
+        return self._grammar
+
+    @grammar.setter
+    def grammar(self, g):
+        """Sets the grammar of this sampler.
+
+        Parameters
+        ----------
+        g: DecompositionGrammar
+        """
+        self._grammar = g
+
+    @property
+    def sampled_class(self):
+        return self._alias
+
+    @return_precomp
+    def eval(self, x, y):
+        if self.grammar is None:
+            raise BoltzmannFrameworkError(
+                self._grammar_not_initialized_error_msg())
+        if self.is_recursive:
+            return self.oracle.get(self.oracle_query_string(x, y))
+        else:
+            return self._referenced_sampler.eval(x, y)
+
+    def oracle_query_string(self, x, y):
+        if self.grammar is None:
+            raise BoltzmannFrameworkError(
+                self._grammar_not_initialized_error_msg())
+        if self.is_recursive:
+            # Evaluations of recursive classes can't be inferred automatically.
+            return "{}({},{})".format(self._alias, x, y)
+        else:
+            return self._referenced_sampler.oracle_query_string(x, y)
+
+    def get_children(self):
+        return self._referenced_sampler,
+
+    def accept(self, visitor):
+        # Here we let the visitor decide if he wants to recurse further down
+        # into the children.
+        # (Kind of ugly but needed to avoid infinite recursion.)
+        visitor_wants_to_go_on = visitor.visit(self)
+        if visitor_wants_to_go_on:
+            for child in self.get_children():
+                child.accept(visitor)
+
+    def sample_iterative(self, stack, result_stack, prev, grammar):
+        if prev is None or self in prev.children:
+            stack.append(self._referenced_sampler)
+        else:
+            stack.pop()

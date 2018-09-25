@@ -14,8 +14,8 @@
 
 from framework.evaluation_oracle import EvaluationOracle
 from framework.generic_samplers import *
-from framework.decomposition_grammar import AliasSampler, DecompositionGrammar
-from framework.generic_samplers import BoltzmannSamplerBase
+from framework.decomposition_grammar import DecompositionGrammar
+from framework.generic_samplers import BoltzmannSamplerBase, AliasSampler
 
 from planar_graph_sampler.combinatorial_classes.one_connected_graph import OneConnectedPlanarGraph
 from planar_graph_sampler.grammar.binary_tree_decomposition import EarlyRejectionControl

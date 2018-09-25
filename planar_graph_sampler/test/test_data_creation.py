@@ -15,8 +15,8 @@
 from timeit import default_timer as timer
 import copy
 
-from framework.generic_samplers import BoltzmannSamplerBase
-from framework.decomposition_grammar import AliasSampler, DecompositionGrammar
+from framework.generic_samplers import BoltzmannSamplerBase, AliasSampler
+from framework.decomposition_grammar import DecompositionGrammar
 from planar_graph_sampler.grammar.binary_tree_decomposition import binary_tree_grammar
 from planar_graph_sampler.grammar.three_connected_decomposition import three_connected_graph_grammar
 from planar_graph_sampler.grammar.two_connected_decomposition import two_connected_graph_grammar

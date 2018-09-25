@@ -15,7 +15,8 @@
 import networkx as nx
 
 from framework.generic_samplers import *
-from framework.decomposition_grammar import AliasSampler, DecompositionGrammar
+from framework.decomposition_grammar import DecompositionGrammar
+from framework.generic_samplers import AliasSampler
 
 from planar_graph_sampler.grammar.binary_tree_decomposition import EarlyRejectionControl
 from planar_graph_sampler.grammar.one_connected_decomposition import one_connected_graph_grammar
