@@ -41,14 +41,14 @@ class TwoConnectedPlanarGraph(HalfEdgeGraph):
         return iter([half_edge_list[0] for half_edge_list in self.half_edge.node_dict().values()])
         # return iter(self.half_edge.get_node_list().keys())
 
-    def replace_l_atoms(self, sampler, x, y, exceptions=None):
+    def replace_l_atoms(self, sampler, exceptions=None):
         nodes = self.half_edge.node_dict()
         # Sample a graph and merge it with all remaining nodes.
         for node in nodes:
             if exceptions and node in [he.node_nr for he in exceptions]:
                 continue
             # Sampler is for L * G_1_dx
-            plug_in = sampler.sample(x, y).second.marked_atom # base_class_object.half_edge
+            plug_in = sampler.sample().second.marked_atom # base_class_object.half_edge
             if not plug_in.is_trivial:
                 # Get an arbitrary half-edge incident to the current node.
                 he = nodes[node][0]

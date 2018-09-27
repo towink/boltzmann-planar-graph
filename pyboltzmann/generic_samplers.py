@@ -14,13 +14,21 @@
 
 from __future__ import division
 
-from framework.class_builder import DefaultBuilder
-from framework.generic_classes import *
-from framework.iterative_sampler import _IterativeSampler
-from framework.utils import *
+import pyboltzmann as pybo
+
+__all__ = ['BoltzmannSamplerBase',
+           'AtomSampler',
+           'ZeroAtomSampler', 'LAtomSampler', 'UAtomSampler',
+           'BinarySampler',
+           'ProdSampler', 'SumSampler', 'LSubsSampler', 'USubsSampler',
+           'UnarySampler',
+           'SetSampler', 'TransformationSampler', 'BijectionSampler',
+           'HookSampler', 'RestartableSampler', 'RejectionSampler',
+           'UDerFromLDerSampler', 'LDerFromUDerSampler',
+           'AliasSampler']
 
 
-def return_precomp(func):
+def _return_precomp(func):
     def wrapper(self, *args, **kwargs):
         if self._precomputed_eval is not None:
             return self._precomputed_eval
@@ -50,7 +58,7 @@ class BoltzmannSamplerBase(object):
 
     def __init__(self):
         # Samplers are always initialized with the default builder.
-        self._builder = DefaultBuilder()
+        self._builder = pybo.DefaultBuilder()
         self._precomputed_eval = None
         self.children = None
 
@@ -275,7 +283,7 @@ class AtomSampler(BoltzmannSamplerBase):
         stack.pop()
         result_stack.append(self.sample())
 
-    @return_precomp
+    @_return_precomp
     def eval(self, x, y):
         return self.oracle[self.oracle_query_string(x, y)]
 
@@ -400,7 +408,7 @@ class SumSampler(BinarySampler):
     def __init__(self, lhs, rhs):
         super(SumSampler, self).__init__(lhs, rhs, '+')
 
-    @return_precomp
+    @_return_precomp
     def eval(self, x, y):
         # For the sum class (disjoint union) the generating function is the sum
         # of the two generating functions.
@@ -408,7 +416,7 @@ class SumSampler(BinarySampler):
 
     def sample_iterative(self, stack, result_stack, prev, grammar):
         if prev is None or self in prev.children:
-            if bern(self.lhs._precomputed_eval / self._precomputed_eval):
+            if pybo.bern(self.lhs._precomputed_eval / self._precomputed_eval):
                 stack.append(self.lhs)
             else:
                 stack.append(self.rhs)
@@ -422,7 +430,7 @@ class ProdSampler(BinarySampler):
     def __init__(self, lhs, rhs):
         super(ProdSampler, self).__init__(lhs, rhs, '*')
 
-    @return_precomp
+    @_return_precomp
     def eval(self, x, y):
         # For the product class (cartesian prod.) the generating function is
         # the product of the two generating functions.
@@ -459,7 +467,7 @@ class LSubsSampler(BinarySampler):
     def __init__(self, lhs, rhs):
         super(LSubsSampler, self).__init__(lhs, rhs, ' lsubs ')
 
-    @return_precomp
+    @_return_precomp
     def eval(self, x, y):
         return self.lhs.eval(self.rhs.oracle_query_string(x, y), y)
 
@@ -478,7 +486,7 @@ class LSubsSampler(BinarySampler):
             # result stack.
             core_object = result_stack.pop()
             # Replace the atoms and push result.
-            sampler = _IterativeSampler(self.rhs, grammar)
+            sampler = pybo.IterativeSampler(self.rhs, grammar)
             res = core_object.replace_l_atoms(sampler)  # Recursion for now.
             result_stack.append(res)
 
@@ -490,7 +498,7 @@ class USubsSampler(BinarySampler):
     def __init__(self, lhs, rhs):
         super(USubsSampler, self).__init__(lhs, rhs, ' usubs ')
 
-    @return_precomp
+    @_return_precomp
     def eval(self, x, y):
         return self.lhs.eval(x, self.rhs.oracle_query_string(x, y))
 
@@ -510,7 +518,7 @@ class USubsSampler(BinarySampler):
             # Recover the old y from the stack.
             # y = result_stack.pop()
             # Replace the atoms and push result.
-            sampler = _IterativeSampler(self.rhs, grammar)
+            sampler = pybo.IterativeSampler(self.rhs, grammar)
             res = core_object.replace_u_atoms(sampler)  # Recursion for now.
             result_stack.append(res)
 
@@ -580,12 +588,12 @@ class SetSampler(UnarySampler):
     def sampled_class(self):
         return "Set_{}({})".format(self._d, self._sampler.sampled_class)
 
-    @return_precomp
+    @_return_precomp
     def eval(self, x, y):
         # The generating function of a set class is a tail of the exponential
         # row evaluated at the generating function of the underlying class
         # (see 3.2).
-        return exp_tail(self._d, self._sampler.eval(x, y))
+        return pybo.exp_tail(self._d, self._sampler.eval(x, y))
 
     def oracle_query_string(self, x, y):
         return "exp_{}({})".format(
@@ -598,8 +606,8 @@ class SetSampler(UnarySampler):
         # We use recursion here for now.
         stack.pop()
         set_elems_sampler = self._sampler
-        k = pois(self._d, self._sampler._precomputed_eval)
-        sampler = _IterativeSampler(set_elems_sampler, grammar)
+        k = pybo.pois(self._d, self._sampler._precomputed_eval)
+        sampler = pybo.IterativeSampler(set_elems_sampler, grammar)
         set_elems = []
         for _ in range(k):
             obj = sampler.sample()
@@ -646,7 +654,7 @@ class TransformationSampler(UnarySampler):
     def sampled_class(self, label):
         self._target_class_label = label
 
-    @return_precomp
+    @_return_precomp
     def eval(self, x, y):
         # If a transformation of the generating function is given, apply it.
         if self._eval_transform is not None:
@@ -686,7 +694,7 @@ class BijectionSampler(TransformationSampler):
         super(BijectionSampler, self).__init__(sampler, f, None,
                                                target_class_label)
 
-    @return_precomp
+    @_return_precomp
     def eval(self, x, y):
         # Since the target class is isomorphic to the underlying class, the
         # evaluation is also the same.
@@ -736,8 +744,8 @@ class RestartableSampler(BijectionSampler):
     def sample_iterative(self, stack, result_stack, prev, grammar):
         stack.pop()
         wrapped_sampler = self._sampler
-        restartable_sampler = _IterativeSampler(wrapped_sampler, grammar,
-                                                is_restartable=True)
+        restartable_sampler = pybo.IterativeSampler(wrapped_sampler, grammar,
+                                               is_restartable=True)
         obj = restartable_sampler.sample()
         result_stack.append(obj)
 
@@ -817,14 +825,14 @@ class UDerFromLDerSampler(TransformationSampler):
 
             def is_acceptable(gamma):
                 # See Lemma 6.
-                return bern(
+                return pybo.bern(
                     (1 / self._alpha_u_l) * (gamma.u_size / (gamma.l_size + 1))
                 )
 
             if is_acceptable(obj_to_check):
                 stack.pop()
                 result_stack.append(
-                    UDerivedClass(obj_to_check.base_class_object))
+                    pybo.UDerivedClass(obj_to_check.base_class_object))
             else:
                 stack.append(self._sampler)
 
@@ -857,14 +865,14 @@ class LDerFromUDerSampler(TransformationSampler):
             obj_to_check = result_stack.pop()
 
             def is_acceptable(gamma):
-                return bern(
+                return pybo.bern(
                     (1 / self._alpha_l_u) * (gamma.l_size / (gamma.u_size + 1))
                 )
 
             if is_acceptable(obj_to_check):
                 stack.pop()
                 result_stack.append(
-                    LDerivedClass(obj_to_check.base_class_object))
+                    pybo.LDerivedClass(obj_to_check.base_class_object))
             else:
                 stack.append(self._sampler)
 
@@ -932,10 +940,10 @@ class AliasSampler(BoltzmannSamplerBase):
     def sampled_class(self):
         return self._alias
 
-    @return_precomp
+    @_return_precomp
     def eval(self, x, y):
         if self.grammar is None:
-            raise BoltzmannFrameworkError(
+            raise pybo.PyBoltzmannError(
                 self._grammar_not_initialized_error_msg())
         if self.is_recursive:
             return self.oracle.get(self.oracle_query_string(x, y))
@@ -944,7 +952,7 @@ class AliasSampler(BoltzmannSamplerBase):
 
     def oracle_query_string(self, x, y):
         if self.grammar is None:
-            raise BoltzmannFrameworkError(
+            raise pybo.PyBoltzmannError(
                 self._grammar_not_initialized_error_msg())
         if self.is_recursive:
             # Evaluations of recursive classes can't be inferred automatically.

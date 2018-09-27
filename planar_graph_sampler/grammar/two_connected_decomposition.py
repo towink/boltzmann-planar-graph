@@ -14,12 +14,9 @@
 
 from __future__ import division
 
-from framework.evaluation_oracle import EvaluationOracle
-from framework.generic_samplers import *
-from framework.decomposition_grammar import DecompositionGrammar
-from framework.generic_samplers import BoltzmannSamplerBase, AliasSampler
-from planar_graph_sampler.grammar.binary_tree_decomposition import EarlyRejectionControl
+import pyboltzmann as pybo
 
+from planar_graph_sampler.grammar.binary_tree_decomposition import EarlyRejectionControl
 from planar_graph_sampler.grammar.grammar_utils import Counter, divide_by_2, to_u_derived_class
 from planar_graph_sampler.combinatorial_classes.halfedge import HalfEdge
 from planar_graph_sampler.combinatorial_classes.two_connected_graph import EdgeRootedTwoConnectedPlanarGraph, \
@@ -27,7 +24,7 @@ from planar_graph_sampler.combinatorial_classes.two_connected_graph import EdgeR
 from planar_graph_sampler.grammar.network_decomposition import network_grammar
 
 
-class ZeroAtomGraphBuilder(DefaultBuilder):
+class ZeroAtomGraphBuilder(pybo.DefaultBuilder):
     """Builds zero atoms of the class G_2_arrow (= link graphs)."""
 
     def __init__(self):
@@ -55,17 +52,17 @@ def to_G_2(decomp):
 def to_G_2_dx(decomp):
     g = decomp.second.underive_all()
     assert isinstance(g, EdgeRootedTwoConnectedPlanarGraph), g
-    return LDerivedClass(TwoConnectedPlanarGraph(g.half_edge))
+    return pybo.LDerivedClass(TwoConnectedPlanarGraph(g.half_edge))
 
 
 def to_G_2_dx_dx(decomp):
-    if isinstance(decomp, ProdClass):
+    if isinstance(decomp, pybo.ProdClass):
         g = decomp.second
     else:
         g = decomp
     g = g.underive_all()
     assert isinstance(g, EdgeRootedTwoConnectedPlanarGraph), g
-    return LDerivedClass(LDerivedClass(TwoConnectedPlanarGraph(g.half_edge)))
+    return pybo.LDerivedClass(pybo.LDerivedClass(TwoConnectedPlanarGraph(g.half_edge)))
 
 
 def to_G_2_arrow(network):
@@ -74,16 +71,16 @@ def to_G_2_arrow(network):
 
 
 def to_G_2_arrow_dx(network):
-    return LDerivedClass(to_G_2_arrow(network))
+    return pybo.LDerivedClass(to_G_2_arrow(network))
 
 
 def to_G_2_arrow_dx_dx(network):
-    return LDerivedClass(to_G_2_arrow_dx(network))
+    return pybo.LDerivedClass(to_G_2_arrow_dx(network))
 
 
 def divide_by_1_plus_y(evl, x, y):
     """Needed as an eval-transform for rules G_2_arrow and G_2_arrow_dx."""
-    return evl / (1 + BoltzmannSamplerBase.oracle.get(y))
+    return evl / (1 + pybo.BoltzmannSamplerBase.oracle.get(y))
 
 
 def mark_l_atom(g_dx):
@@ -115,29 +112,30 @@ def two_connected_graph_grammar():
         The grammar for sampling from G_2_dx and G_2_dx_dx.
     """
 
-    Z = ZeroAtomSampler
-    L = LAtomSampler
-    D = AliasSampler('D')
-    D_dx = AliasSampler('D_dx')
-    D_dx_dx = AliasSampler('D_dx_dx')
-    F = AliasSampler('F')
-    F_dx = AliasSampler('F_dx')
-    F_dx_dx = AliasSampler('F_dx_dx')
-    G_2_dy = AliasSampler('G_2_dy')
-    G_2_dx_dy = AliasSampler('G_2_dx_dy')
-    G_2_dx_dx_dy = AliasSampler('G_2_dx_dx_dy')
-    G_2_arrow = AliasSampler('G_2_arrow')
-    G_2_arrow_dx = AliasSampler('G_2_arrow_dx')
-    G_2_arrow_dx_dx = AliasSampler('G_2_arrow_dx_dx')
-    Trans = TransformationSampler
-    Bij = BijectionSampler
-    DxFromDy = LDerFromUDerSampler
+    Z = pybo.ZeroAtomSampler
+    L = pybo.LAtomSampler
+    Rule = pybo.AliasSampler
+    D = Rule('D')
+    D_dx = Rule('D_dx')
+    D_dx_dx = Rule('D_dx_dx')
+    F = Rule('F')
+    F_dx = Rule('F_dx')
+    F_dx_dx = Rule('F_dx_dx')
+    G_2_dy = Rule('G_2_dy')
+    G_2_dx_dy = Rule('G_2_dx_dy')
+    G_2_dx_dx_dy = Rule('G_2_dx_dx_dy')
+    G_2_arrow = Rule('G_2_arrow')
+    G_2_arrow_dx = Rule('G_2_arrow_dx')
+    G_2_arrow_dx_dx = Rule('G_2_arrow_dx_dx')
+    Trans = pybo.TransformationSampler
+    Bij = pybo.BijectionSampler
+    DxFromDy = pybo.LDerFromUDerSampler
 
-    grammar = DecompositionGrammar()
+    grammar = pybo.DecompositionGrammar()
     grammar.rules = network_grammar().rules
     EarlyRejectionControl.grammar = grammar
 
-    grammar.rules = {
+    grammar.add_rules({
 
         # two connected
 
@@ -181,7 +179,8 @@ def two_connected_graph_grammar():
                 mark_3_l_atoms
             ),
 
-    }
+    })
+
     grammar.set_builder(['G_2_arrow'], ZeroAtomGraphBuilder())
 
 
@@ -189,28 +188,25 @@ def two_connected_graph_grammar():
 
 
 if __name__ == '__main__':
-    import matplotlib.pyplot as plt
     from planar_graph_sampler.evaluations_planar_graph import *
     from timeit import default_timer as timer
 
-    oracle = EvaluationOracle(my_evals_100)
-    BoltzmannSamplerBase.oracle = oracle
-    BoltzmannSamplerBase.debug_mode = False
+    oracle = pybo.EvaluationOracle(my_evals_100)
+    pybo.BoltzmannSamplerBase.oracle = oracle
+    pybo.BoltzmannSamplerBase.debug_mode = False
 
     start = timer()
     grammar = two_connected_graph_grammar()
-    grammar.init()
     symbolic_x = 'x*G_1_dx(x,y)'
     symbolic_y = 'y'
     sampled_class = 'G_2_dx'
-    # print(grammar.collect_oracle_queries(sampled_class, symbolic_x, symbolic_y))
-    grammar.precompute_evals(sampled_class, symbolic_x, symbolic_y)
+    grammar.init(sampled_class, symbolic_x, symbolic_y)
     end = timer()
     print("Time init: {}".format(end - start))
 
     try:
         print("expected avg. size: {}\n".format(oracle.get_expected_l_size(sampled_class, symbolic_x, symbolic_y)))
-    except BoltzmannFrameworkError:
+    except pybo.PyBoltzmannError:
         pass
 
     # random.seed(0)
@@ -218,10 +214,10 @@ if __name__ == '__main__':
 
     l_sizes = []
     i = 0
-    samples = 10000
+    samples = 100
     start = timer()
     while i < samples:
-        obj = grammar.sample_iterative(sampled_class, symbolic_x, symbolic_y)
+        obj = grammar.sample_iterative(sampled_class)
         l_sizes.append(obj.l_size)
         # print(obj.l_size)
         i += 1

@@ -1,6 +1,6 @@
 from copy import deepcopy
 
-from framework.generic_samplers import *
+from pyboltzmann.generic_samplers import *
 
 
 class TestGenericClasses(object):
@@ -59,7 +59,7 @@ class TestGenericClasses(object):
                         dummy = dummy.replace_l_atoms(self.fake_sampler, 'x', 'y', excp)
                         assert dummy.l_size == (l_size - len(excp)) * self.fake_sampler.l_size_sampled_object() + len(excp)
                         assert dummy.u_size == u_size + (l_size - len(excp)) * self.fake_sampler.u_size_sampled_object()
-                    except BoltzmannFrameworkError:
+                    except PyBoltzmannError:
                         pass
                 for excp in exceptions:
                     dummy = DummyClass(l_size, u_size)
@@ -67,7 +67,7 @@ class TestGenericClasses(object):
                         dummy = dummy.replace_u_atoms(self.fake_sampler, 'x', 'y', excp)
                         assert dummy.l_size == l_size + (u_size - len(excp)) * self.fake_sampler.l_size_sampled_object()
                         assert dummy.u_size == (u_size - len(excp)) * self.fake_sampler.u_size_sampled_object() + len(excp)
-                    except BoltzmannFrameworkError:
+                    except PyBoltzmannError:
                         pass
 
     def test_prod_class(self):

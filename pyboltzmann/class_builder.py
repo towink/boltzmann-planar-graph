@@ -12,63 +12,102 @@
 #           Rudi Floren <rudi.floren@gmail.com>
 #           Tobias Winkler <tobias.winkler1@rwth-aachen.de>
 
-from framework.generic_classes import *
+"""
+Several combinatorial class builders: abstract, default and dummy.
+
+User defined builders should derive from `CombinatorialClassBuilder`.
+Builders are responsable for creating the output of the generic samplers.
+"""
+
+import pyboltzmann as pybo
+
+__all__ = ['CombinatorialClassBuilder',
+           'DefaultBuilder',
+           'DummyBuilder']
 
 
-class CombinatorialClassBuilder:
+class CombinatorialClassBuilder(object):
     """
     Interface for objects that build combinatorial classes.
-    # TODO implement size checking mechanism.
+    # TODO Implement a size checking mechanism?
     """
 
     def zero_atom(self):
+        """Builds a zero-atom.
+
+        Returns
+        -------
+        CombinatorialClass
+        """
         raise NotImplementedError
 
     def l_atom(self):
+        """Builds an l-atom.
+
+        Returns
+        -------
+        CombinatorialClass
+        """
         raise NotImplementedError
 
     def u_atom(self):
+        """Builds a u-atom.
+
+        Returns
+        -------
+        CombinatorialClass
+        """
         raise NotImplementedError
 
     def product(self, lhs, rhs):
-        """
+        """Builds an object which corresponds to a combinatorial product of
+        the given arguments.
 
         Parameters
         ----------
-        lhs: CombinatorialClass
-        rhs: CombinatorialClass
+        lhs : CombinatorialClass
+        rhs : CombinatorialClass
+
+        Returns
+        -------
+        CombinatorialClass
         """
         raise NotImplementedError
 
     def set(self, elements):
-        """
+        """Builds an object which corresponds to a combinatorial set
+        construction of the given elements.
 
         Parameters
         ----------
-        elements: list of CombinatorialClass
+        elements : list of CombinatorialClass
+
+        Returns
+        -------
+        CombinatorialClass
         """
         raise NotImplementedError
 
 
 class DefaultBuilder(CombinatorialClassBuilder):
     """
-    Builds the generic objects.
+    Builds the generic class objects.
     """
 
     def zero_atom(self):
-        return ZeroAtomClass()
+        return pybo.ZeroAtomClass()
 
     def l_atom(self):
-        return LAtomClass()
+        return pybo.LAtomClass()
 
     def u_atom(self):
-        return UAtomClass()
+        return pybo.UAtomClass()
 
     def product(self, lhs, rhs):
-        return ProdClass(lhs, rhs)
+        return pybo.ProdClass(lhs, rhs)
 
     def set(self, elements):
-        return SetClass(elements)
+        return pybo.SetClass(elements)
 
 
 class DummyBuilder(CombinatorialClassBuilder):
@@ -77,18 +116,15 @@ class DummyBuilder(CombinatorialClassBuilder):
     """
 
     def zero_atom(self):
-        return DummyClass()
+        return pybo.DummyClass()
 
     def l_atom(self):
-        return DummyClass(l_size=1)
+        return pybo.DummyClass(l_size=1)
 
     def u_atom(self):
-        return DummyClass(u_size=1)
+        return pybo.DummyClass(u_size=1)
 
     def product(self, lhs, rhs):
-        # l_size = lhs.l_size + rhs.l_size
-        # u_size = lhs.u_size + rhs.u_size
-        # return DummyClass(l_size, u_size)
         lhs._l_size += rhs._l_size
         lhs._u_size += rhs._u_size
         return lhs
@@ -99,4 +135,4 @@ class DummyBuilder(CombinatorialClassBuilder):
         for dummy in elements:
             l_size += dummy.l_size
             u_size += dummy.u_size
-        return DummyClass(l_size, u_size)
+        return pybo.DummyClass(l_size, u_size)

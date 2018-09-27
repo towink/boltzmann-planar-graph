@@ -12,7 +12,7 @@
 #           Rudi Floren <rudi.floren@gmail.com>
 #           Tobias Winkler <tobias.winkler1@rwth-aachen.de>
 
-from framework.generic_classes import CombinatorialClass
+from pyboltzmann.generic_classes import CombinatorialClass
 from planar_graph_sampler.combinatorial_classes.half_edge_graph import HalfEdgeGraph
 
 from planar_graph_sampler.combinatorial_classes.halfedge import ClosureHalfEdge

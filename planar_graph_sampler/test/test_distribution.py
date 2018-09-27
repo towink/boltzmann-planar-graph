@@ -1,9 +1,9 @@
 from __future__ import division
 import networkx as nx
 
-from framework.generic_classes import DerivedClass
-from framework.generic_samplers import BoltzmannSamplerBase
-from framework.evaluation_oracle import EvaluationOracle
+from pyboltzmann.generic_classes import DerivedClass
+from pyboltzmann.generic_samplers import BoltzmannSamplerBase
+from pyboltzmann.evaluation_oracle import EvaluationOracle
 
 from planar_graph_sampler.evaluations_planar_graph import \
     planar_graph_evals_n100, planar_graph_evals_n1000, reference_evals
@@ -128,7 +128,7 @@ def test_distribution_R_w_l_1(num_samples=100):
     symbolic_x = 'x*G_1_dx(x,y)'
     symbolic_y = 'D(x*G_1_dx(x,y),y)'
     sampled_class = 'R_w'
-    grammar.precompute_evals(sampled_class, symbolic_x, symbolic_y)
+    grammar._precompute_evals(sampled_class, symbolic_x, symbolic_y)
 
     # In this case the labs column does not correspond to actual labelings
     # but to distinction because of the root.
@@ -155,7 +155,7 @@ def test_distribution_R_b_l_1(num_samples=100):
     symbolic_x = 'x*G_1_dx(x,y)'
     symbolic_y = 'D(x*G_1_dx(x,y),y)'
     sampled_class = 'R_b'
-    grammar.precompute_evals(sampled_class, symbolic_x, symbolic_y)
+    grammar._precompute_evals(sampled_class, symbolic_x, symbolic_y)
 
     # In this case the labs column does not correspond to actual labelings
     # but to distinction because of the root.
@@ -182,7 +182,7 @@ def test_distribution_K_dy_l_1(num_samples=100):
     symbolic_x = 'x*G_1_dx(x,y)'
     symbolic_y = 'D(x*G_1_dx(x,y),y)'
     sampled_class = 'K_dy'
-    grammar.precompute_evals(sampled_class, symbolic_x, symbolic_y)
+    grammar._precompute_evals(sampled_class, symbolic_x, symbolic_y)
 
     # In this case the labs column does not correspond to actual labelings
     # but to distinction because of the root.
@@ -209,7 +209,7 @@ def test_distribution_K_l_1(num_samples=100):
     symbolic_x = 'x*G_1_dx(x,y)'
     symbolic_y = 'D(x*G_1_dx(x,y),y)'
     sampled_class = 'K'
-    grammar.precompute_evals(sampled_class, symbolic_x, symbolic_y)
+    grammar._precompute_evals(sampled_class, symbolic_x, symbolic_y)
 
     # There are only 2 possibilities.
     graphs_labs = [
@@ -233,7 +233,7 @@ def test_distribution_K_l_2(num_samples=100):
     symbolic_x = 'x*G_1_dx(x,y)'
     symbolic_y = 'D(x*G_1_dx(x,y),y)'
     sampled_class = 'K'
-    grammar.precompute_evals(sampled_class, symbolic_x, symbolic_y)
+    grammar._precompute_evals(sampled_class, symbolic_x, symbolic_y)
 
     star_path_1 = nx.star_graph(3)
     star_path_1.add_edge(1, 4)
@@ -269,7 +269,7 @@ def test_distribution_G_3_arrow_l_2(num_samples=100):
     symbolic_x = 'x*G_1_dx(x,y)'
     symbolic_y = 'D(x*G_1_dx(x,y),y)'
     sampled_class = 'G_3_arrow'
-    grammar.precompute_evals(sampled_class, symbolic_x, symbolic_y)
+    grammar._precompute_evals(sampled_class, symbolic_x, symbolic_y)
 
     # There is only 1 possibility, this test is sort of boring.
     graphs_labs_u_size = [
@@ -292,7 +292,7 @@ def test_distribution_G_3_arrow_l_3(num_samples=100):
     symbolic_x = 'x*G_1_dx(x,y)'
     symbolic_y = 'D(x*G_1_dx(x,y),y)'
     sampled_class = 'G_3_arrow'
-    grammar.precompute_evals(sampled_class, symbolic_x, symbolic_y)
+    grammar._precompute_evals(sampled_class, symbolic_x, symbolic_y)
 
     cycle_with_midpoint = nx.cycle_graph(4)
     cycle_with_midpoint.add_edges_from([(0, 4), (1, 4), (2, 4), (3, 4)])
@@ -325,7 +325,7 @@ def test_distribution_G_3_arrow_l_4(num_samples=100):
     symbolic_x = 'x*G_1_dx(x,y)'
     symbolic_y = 'D(x*G_1_dx(x,y),y)'
     sampled_class = 'G_3_arrow'
-    grammar.precompute_evals(sampled_class, symbolic_x, symbolic_y)
+    grammar._precompute_evals(sampled_class, symbolic_x, symbolic_y)
 
     # TODO we do not have enough data here to make this test
 

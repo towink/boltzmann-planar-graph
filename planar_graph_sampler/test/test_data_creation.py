@@ -15,14 +15,14 @@
 from timeit import default_timer as timer
 import copy
 
-from framework.generic_samplers import BoltzmannSamplerBase, AliasSampler
-from framework.decomposition_grammar import DecompositionGrammar
+from pyboltzmann.generic_samplers import BoltzmannSamplerBase, AliasSampler
+from pyboltzmann.decomposition_grammar import DecompositionGrammar
 from planar_graph_sampler.grammar.binary_tree_decomposition import binary_tree_grammar
 from planar_graph_sampler.grammar.three_connected_decomposition import three_connected_graph_grammar
 from planar_graph_sampler.grammar.two_connected_decomposition import two_connected_graph_grammar
 from planar_graph_sampler.grammar.one_connected_decomposition import one_connected_graph_grammar
 from planar_graph_sampler.grammar.planar_graph_decomposition import planar_graph_grammar
-from framework.evaluation_oracle import EvaluationOracle
+from pyboltzmann.evaluation_oracle import EvaluationOracle
 from planar_graph_sampler.evaluations_planar_graph import planar_graph_evals
 from planar_graph_sampler.grammar.planar_graph_decomposition import comps_to_planar_embedding
 

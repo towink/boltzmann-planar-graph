@@ -1,11 +1,19 @@
+# -*- coding: utf-8 -*-
+#    Copyright (C) 2018 by
+#    Tobias Winkler <tobias.winkler1@rwth-aachen.de>
+#    All rights reserved.
+#    BSD license.
+#
+# Authors:  Tobias Winkler <tobias.winkler1@rwth-aachen.de>
+
 from timeit import default_timer as timer
+
 from scipy.stats import chisquare
 
-from framework.generic_samplers import BoltzmannSamplerBase, BoltzmannFrameworkError
-from framework.evaluation_oracle import EvaluationOracle
-from framework.generic_classes import SetClass
+from pyboltzmann.evaluation_oracle import EvaluationOracle
+from pyboltzmann.generic_classes import SetClass
+from pyboltzmann.generic_samplers import BoltzmannSamplerBase
 from planar_graph_sampler.combinatorial_classes.half_edge_graph import HalfEdgeGraph
-from planar_graph_sampler.grammar.one_connected_decomposition import one_connected_graph_grammar
 from planar_graph_sampler.evaluations_planar_graph import *
 from planar_graph_sampler.grammar.planar_graph_decomposition import planar_graph_grammar, comps_to_nx_graph
 
@@ -27,8 +35,7 @@ def sample_graphs_and_count(sampled_class, x, y, counting_seq, offset=1, factor=
     oracle = EvaluationOracle(my_evals_10)
     BoltzmannSamplerBase.oracle = oracle
     grammar = planar_graph_grammar()
-    grammar.init()
-    grammar.precompute_evals(sampled_class, x, y)
+    grammar.init(sampled_class, x, y)
 
     # The result will be a dictionary of graph count dicts keyed by number of nodes.
     result = {offset + i: {} for i in range(0, len(counting_seq))}
@@ -74,9 +81,9 @@ def test_distribution_chi_square(significance=0.01, plot=False):
     args_array = [
 
         # A066537 in the OEIS.
-        # ('G', 'x', 'y', [2, 8, 64], 2),
-        # ('G_dx', 'x', 'y', [2, 8, 64], 2),
-        # ('G_dx_dx', 'x', 'y', [2, 8, 64], 2, 10),
+        ('G', 'x', 'y', [2, 8, 64], 2),
+        ('G_dx', 'x', 'y', [2, 8, 64], 2),
+        ('G_dx_dx', 'x', 'y', [2, 8, 64], 2, 10),
         # ('G_dx_dx_dx', 'x', 'y', [8, 64], 3, 10),  # TODO FAILS!!
 
         # A096332 in the OEIS.

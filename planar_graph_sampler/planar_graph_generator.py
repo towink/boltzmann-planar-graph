@@ -17,12 +17,15 @@ import multiprocessing as multiproc
 
 from planar_graph_sampler.grammar.planar_graph_decomposition import \
     planar_graph_grammar, comps_to_nx_planar_embedding, comps_to_nx_graph
-from framework.evaluation_oracle import EvaluationOracle
-from framework.generic_samplers import BoltzmannSamplerBase
-from framework.generic_classes import SetClass
+from pyboltzmann.evaluation_oracle import EvaluationOracle
+from pyboltzmann.generic_samplers import BoltzmannSamplerBase
+from pyboltzmann.generic_classes import SetClass
 from planar_graph_sampler.evaluations_planar_graph import *
 import networkx as nx
 import datetime
+
+__all__ = ['random_planar_graph',
+           'PlanarGraphGenerator']
 
 
 def random_planar_graph(n, epsilon=0.1, require_connected=True,
@@ -102,7 +105,7 @@ class PlanarGraphGenerator(object):
         BoltzmannSamplerBase.oracle = EvaluationOracle(my_evals_1000)
         self._grammar = planar_graph_grammar()
         self._grammar.init()
-        self._grammar.precompute_evals('G_dx_dx_dx', 'x', 'y')
+        self._grammar._precompute_evals('G_dx_dx_dx', 'x', 'y')
 
     def sample(self):
         """Invokes the random generator once."""

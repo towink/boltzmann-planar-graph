@@ -69,7 +69,7 @@ class EdgeRootedThreeConnectedPlanarGraph(HalfEdgeGraph):
         he2 = random.choice(possible_edges)
         return he1, he2
 
-    def replace_u_atoms(self, sampler, x=None, y=None, exceptions=None):
+    def replace_u_atoms(self, sampler, exceptions=None):
         """Needed in the u-substitution that occurs in the network decomposition."""
         # Get the edges for substitution in a separate set.
         edges_for_subs = self.half_edge.get_all_half_edges(include_opp=False, include_unpaired=False)
@@ -86,6 +86,6 @@ class EdgeRootedThreeConnectedPlanarGraph(HalfEdgeGraph):
                     edges_for_subs.remove(excp.opposite)
         # Substitute the edges with a newly sampled network one by one.
         for edge_for_substitution in edges_for_subs:
-            network = sampler.sample(x, y)
+            network = sampler.sample()
             substitute_edge_by_network(edge_for_substitution, network)
         return self

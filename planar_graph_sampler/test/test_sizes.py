@@ -1,6 +1,6 @@
-from framework.evaluation_oracle import EvaluationOracle
-from framework.generic_samplers import BoltzmannSamplerBase
-from framework.generic_classes import BoltzmannFrameworkError
+from pyboltzmann.evaluation_oracle import EvaluationOracle
+from pyboltzmann.generic_samplers import BoltzmannSamplerBase
+from pyboltzmann import PyBoltzmannError
 from planar_graph_sampler.grammar.binary_tree_decomposition import binary_tree_grammar
 
 from planar_graph_sampler.grammar.planar_graph_decomposition import planar_graph_grammar
@@ -20,7 +20,7 @@ def test_sampled_sizes():
         grammar = dummy_sampling_grammar()
         grammar.init()
         grammar.dummy_sampling_mode()
-        grammar.precompute_evals('K', 'x*G_1_dx(x,y)', 'D(x*G_1_dx(x,y),y)')
+        grammar._precompute_evals('K', 'x*G_1_dx(x,y)', 'D(x*G_1_dx(x,y),y)')
 
         classes_known_dx = [
             'G_3_arrow',

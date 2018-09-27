@@ -1,4 +1,4 @@
-from framework.generic_classes import *
+from pyboltzmann.generic_classes import *
 from .binary_tree import BinaryTree
 __all__ = ["CombinatorialClass", 
             "ZeroAtomClass",

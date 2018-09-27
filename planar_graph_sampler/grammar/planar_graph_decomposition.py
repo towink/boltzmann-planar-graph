@@ -14,9 +14,7 @@
 
 import networkx as nx
 
-from framework.generic_samplers import *
-from framework.decomposition_grammar import DecompositionGrammar
-from framework.generic_samplers import AliasSampler
+import pyboltzmann as pybo
 
 from planar_graph_sampler.grammar.binary_tree_decomposition import EarlyRejectionControl
 from planar_graph_sampler.grammar.one_connected_decomposition import one_connected_graph_grammar
@@ -47,7 +45,7 @@ def comps_to_nx_graph(components):
     return res
 
 
-class PlanarGraphBuilder(DefaultBuilder):
+class PlanarGraphBuilder(pybo.DefaultBuilder):
     def product(self, lhs, rhs):
         # Treat products like sets.
         rhs.append(lhs)
@@ -64,21 +62,23 @@ def planar_graph_grammar():
     """
 
     # Some shortcuts to make the grammar more readable.
-    G_1 = AliasSampler('G_1')
-    G_1_dx = AliasSampler('G_1_dx')
-    G_1_dx_dx = AliasSampler('G_1_dx_dx')
-    G_1_dx_dx_dx = AliasSampler('G_1_dx_dx_dx')
-    G = AliasSampler('G')
-    G_dx = AliasSampler('G_dx')
-    G_dx_dx = AliasSampler('G_dx')
+    Rule = pybo.AliasSampler
+    G_1 = Rule('G_1')
+    G_1_dx = Rule('G_1_dx')
+    G_1_dx_dx = Rule('G_1_dx_dx')
+    G_1_dx_dx_dx = Rule('G_1_dx_dx_dx')
+    G = Rule('G')
+    G_dx = Rule('G_dx')
+    G_dx_dx = Rule('G_dx')
+    Set = pybo.SetSampler
 
-    grammar = DecompositionGrammar()
+    grammar = pybo.DecompositionGrammar()
     grammar.rules = one_connected_graph_grammar().rules
     EarlyRejectionControl.grammar = grammar
 
-    grammar.rules = {
+    grammar.add_rules({
 
-        'G': SetSampler(0, G_1),
+        'G': Set(0, G_1),
 
         'G_dx': G_1_dx * G,
 
@@ -86,7 +86,7 @@ def planar_graph_grammar():
 
         'G_dx_dx_dx': G_1_dx_dx_dx * G + G_1_dx_dx * G_dx + G_1_dx_dx * G_dx + G_1_dx * G_dx_dx
 
-    }
+    })
     grammar.set_builder(
         ['G', 'G_dx', 'G_dx_dx', 'G_dx_dx_dx'], PlanarGraphBuilder())
 
@@ -94,32 +94,29 @@ def planar_graph_grammar():
 
 
 if __name__ == '__main__':
-    import matplotlib.pyplot as plt
     from planar_graph_sampler.evaluations_planar_graph import *
     from timeit import default_timer as timer
-    from framework.evaluation_oracle import EvaluationOracle
+    from pyboltzmann.evaluation_oracle import EvaluationOracle
 
     oracle = EvaluationOracle(my_evals_100)
-    BoltzmannSamplerBase.oracle = oracle
-    BoltzmannSamplerBase.debug_mode = False
+    pybo.BoltzmannSamplerBase.oracle = oracle
+    pybo.BoltzmannSamplerBase.debug_mode = False
 
     start = timer()
     grammar = planar_graph_grammar()
-    grammar.init()
     symbolic_x = 'x'
     symbolic_y = 'y'
     sampled_class = 'G_dx_dx_dx'
     # symbolic_x = 'x*G_1_dx(x,y)'
     # symbolic_y = 'D(x*G_1_dx(x,y),y)'
     # sampled_class = 'K'
-    # print(grammar.collect_oracle_queries(sampled_class, symbolic_x, symbolic_y))
-    grammar.precompute_evals(sampled_class, symbolic_x, symbolic_y)
+    grammar.init(sampled_class, symbolic_x, symbolic_y)
     end = timer()
     print("Time init: {}".format(end - start))
 
     try:
         print("expected avg. size: {}\n".format(oracle.get_expected_l_size(sampled_class, symbolic_x, symbolic_y)))
-    except BoltzmannFrameworkError:
+    except pybo.PyBoltzmannError:
         pass
 
     # random.seed(0)
@@ -130,7 +127,7 @@ if __name__ == '__main__':
     samples = 10000000
     start = timer()
     while i < samples:
-        obj = grammar.sample_iterative(sampled_class, symbolic_x, symbolic_y)
+        obj = grammar.sample_iterative(sampled_class)
         l_sizes.append(obj.l_size)
         if obj.l_size > 100:
             print(obj.l_size)

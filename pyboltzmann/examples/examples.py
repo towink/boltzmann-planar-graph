@@ -15,10 +15,10 @@
 from __future__ import division, print_function
 import math
 
-from framework.decomposition_grammar import *
-from framework.evaluation_oracle import EvaluationOracle
+from pyboltzmann.decomposition_grammar import *
+from pyboltzmann.evaluation_oracle import EvaluationOracle
 
-from framework.generic_samplers import BoltzmannSamplerBase, AliasSampler
+from pyboltzmann.generic_samplers import BoltzmannSamplerBase, AliasSampler
 
 
 def dummy_sampling():
@@ -57,7 +57,7 @@ def dummy_sampling():
     # Inject the oracle into the samplers.
     BoltzmannSamplerBase.oracle = tree_oracle
 
-    print(tree_grammar.collect_oracle_queries('Tree', 'x', 'y'))
+    print(tree_grammar._collect_oracle_queries('Tree', 'x', 'y'))
 
     num_samples = 10
     while True:
@@ -92,7 +92,7 @@ def natural_numbers():
         'N(x,y)': N
     })
     BoltzmannSamplerBase.oracle = oracle
-    grammar.precompute_evals('N', 'x', 'y')
+    grammar._precompute_evals('N', 'x', 'y')
     print("expected number: {}".format(y * N_dy / N))
     num_samples = 10
     numbers = [grammar.sample_iterative('N', 'x', 'y') for _ in range(num_samples)]
@@ -128,7 +128,7 @@ def integer_partitions():
         'P': Bij(USubs(Set(1, U()), Rule('N')), to_partition)
     })
     grammar.init()
-    print("Needed oracle entries for sampling: {}\n".format(grammar.collect_oracle_queries('P', 'x', 'y')))
+    print("Needed oracle entries for sampling: {}\n".format(grammar._collect_oracle_queries('P', 'x', 'y')))
 
     y = 0.56
     N = y / (1 - y)
@@ -244,7 +244,7 @@ def binary_trees():
 
     print(tree_grammar.sample_iterative('T', 'x', 'y'))
 
-    print("needed oracle entries for sampling: {}\n".format(tree_grammar.collect_oracle_queries('T', 'x', 'y')))
+    print("needed oracle entries for sampling: {}\n".format(tree_grammar._collect_oracle_queries('T', 'x', 'y')))
 
     num_samples = 10
     while True:
@@ -265,21 +265,9 @@ def binary_trees():
 def test_examples():
     examples = [
         natural_numbers,
-<<<<<<< Updated upstream
         binary_trees,
         integer_partitions,
-        set_partitions,
-<<<<<<< Updated upstream
-        dummy_sampling
-=======
-        test_dummy_size
-=======
-        # binary_trees,
-        # integer_partitions,
-        # set_partitions,
-        # dummy_sampling
->>>>>>> Stashed changes
->>>>>>> Stashed changes
+        set_partitions
     ]
     for example in examples:
         example()
@@ -287,5 +275,4 @@ def test_examples():
 
 
 if __name__ == "__main__":
-    # random.seed(0)
     test_examples()

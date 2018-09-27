@@ -15,7 +15,7 @@
 from __future__ import division
 import math
 
-from framework.generic_classes import BoltzmannFrameworkError
+import pyboltzmann as pybo
 
 
 class EvaluationOracle(object):
@@ -28,10 +28,13 @@ class EvaluationOracle(object):
 
     Notes
     -----
-    The evaluations can be accessed with a string that represents the 'symbolic evaluation' of the generating function.
-    For example, for a class C, the evaluation of C at x and y can be accessed with 'C(x,y)' while the evaluation
-    of D at x = z and y = C(x,z) for some other class D will have the key 'D(z,C(x,z))' and so on.
-    Notice that in general generating functions are named by the label of the corresponding class.
+    The evaluations can be accessed with a string that represents the
+    'symbolic evaluation' of the generating function.
+    For example, for a class C, the evaluation of C at x and y can be accessed
+    with 'C(x,y)' while the evaluation of D at x = z and y = C(x,z) for some
+    other class D will have the key 'D(z,C(x,z))' and so on.
+    Notice that in general generating functions are named by the label of the
+    corresponding class.
     """
 
     def __init__(self, evals=None):
@@ -65,10 +68,11 @@ class EvaluationOracle(object):
         try:
             return self.evals[query_string]
         except KeyError:
-            raise BoltzmannFrameworkError('Oracle key missing: {}'.format(query_string))
+            raise pybo.PyBoltzmannError(
+                'Oracle key missing: {}'.format(query_string))
             
     @staticmethod            
-    def get_best_oracle_for_size(size, graph_evals):
+    def get_best_oracle_for_size(self, size, graph_evals):
         """Returns the best fitting oracle.
         
         This is chosen based on the sampling size.
@@ -86,13 +90,13 @@ class EvaluationOracle(object):
         -------
         orcale: EvaluationOracle
         """
+        # TODO.
         for eval_size in graph_evals.keys():
             if size <= eval_size:
                 best_evals = graph_evals[eval_size]
                 break
         
         return EvaluationOracle(best_evals)
-        
 
     def __getitem__(self, query_string):
         """Same as EvaluationOracle.get(query_string).
@@ -124,7 +128,8 @@ class EvaluationOracle(object):
         return query_string in self.evals
 
     def contains_all(self, query_strings):
-        """Checks whether this oracle contains all the evaluations in the given range.
+        """Checks whether this oracle contains all the evaluations in the
+        given range.
 
         Parameters
         ----------
@@ -138,11 +143,13 @@ class EvaluationOracle(object):
 
         Notes
         -----
-        May be used to check if all evaluations needed by a specific grammar exist in the oracle.
+        May be used to check if all evaluations needed by a specific grammar
+        exist in the oracle.
         """
         return all(q in self for q in query_strings)
 
-    def get_probability(self, class_label, symbolic_x, symbolic_y, l_size, u_size):
+    def get_probability(self, class_label, symbolic_x, symbolic_y,
+                        l_size, u_size):
         """Computes the probability of an object with the given sizes.
 
         Parameters
@@ -161,15 +168,16 @@ class EvaluationOracle(object):
         Returns
         -------
         probability: float
-            The probability of an object from the given class under the Boltzmann distribution induced by the given
-            parameters.
+            The probability of an object from the given class under the
+            Boltzmann distribution induced by the given parameters.
         """
         query_string = '{}({},{})'.format(class_label, symbolic_x, symbolic_y)
         l_term = math.pow(self[symbolic_x], l_size) / math.factorial(l_size)
         u_term = math.pow(self[symbolic_y], u_size)
         return (l_term * u_term) / self.get(query_string)
 
-    def get_expected_l_size(self, class_label, symbolic_x, symbolic_y, class_label_dx=None):
+    def get_expected_l_size(self, class_label, symbolic_x, symbolic_y,
+                            class_label_dx=None):
         """Computes the expected l-size of an object from the given class.
 
         Parameters
@@ -187,18 +195,16 @@ class EvaluationOracle(object):
         float
             Expected l-size of the sampled objects from the given class.
 
-        Raises
-        ------
-        BoltzmannFrameworkError
-            If the result could not be computed due to missing values in the oracle.
-
         Notes
         -----
-        This will only work of the evaluation of the l-derived class is also available in the oracle.
+        This will only work of the evaluation of the l-derived class is also
+        available in the oracle.
         """
         query_string = '{}({},{})'.format(class_label, symbolic_x, symbolic_y)
         if class_label_dx is None:
-            query_string_dx = '{}_dx({},{})'.format(class_label, symbolic_x, symbolic_y)
+            query_string_dx = '{}_dx({},{})'.format(
+                class_label, symbolic_x, symbolic_y)
         else:
-            query_string_dx = '{}({},{})'.format(class_label_dx, symbolic_x, symbolic_y)
+            query_string_dx = '{}({},{})'.format(
+                class_label_dx, symbolic_x, symbolic_y)
         return self[symbolic_x] * self[query_string_dx] / self[query_string]

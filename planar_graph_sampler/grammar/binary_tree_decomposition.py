@@ -14,11 +14,7 @@
 
 from __future__ import division
 
-from framework.evaluation_oracle import EvaluationOracle
-from framework.decomposition_grammar import DecompositionGrammar
-from framework.generic_samplers import *
-from framework.generic_samplers import BoltzmannSamplerBase, AliasSampler
-from framework.utils import bern
+import pyboltzmann as pybo
 
 from planar_graph_sampler.grammar.grammar_utils import underive, Counter
 from planar_graph_sampler.combinatorial_classes import BinaryTree
@@ -48,7 +44,7 @@ class EarlyRejectionControl:
         EarlyRejectionControl.L = 0
 
 
-class BinaryTreeBuilder(DefaultBuilder):
+class BinaryTreeBuilder(pybo.DefaultBuilder):
     """Common base class for black- and white-rooted binary tree builders."""
 
     def __init__(self):
@@ -59,7 +55,7 @@ class BinaryTreeBuilder(DefaultBuilder):
         if EarlyRejectionControl.rejection_activated:
             EarlyRejectionControl.L += 1
             L = EarlyRejectionControl.L
-            if L > 1 and not bern(L / (L + 1)):
+            if L > 1 and not pybo.bern(L / (L + 1)):
                 EarlyRejectionControl.grammar.restart_sampler()
         return Leaf()
 
@@ -90,7 +86,7 @@ class BlackRootedBinaryTreeBuilder(BinaryTreeBuilder):
         if EarlyRejectionControl.rejection_activated:
             EarlyRejectionControl.L += 1
             L = EarlyRejectionControl.L
-            if L > 1 and not bern(L / (L + 1)):
+            if L > 1 and not pybo.bern(L / (L + 1)):
                 EarlyRejectionControl.grammar.restart_sampler()
         return Leaf()
 
@@ -116,14 +112,14 @@ class BlackRootedBinaryTreeBuilder(BinaryTreeBuilder):
 
 def to_K_dy(tree):
     tree.leaves_count += 1
-    return UDerivedClass(tree)
+    return pybo.UDerivedClass(tree)
 
 
 def to_K_dy_dx(tree):
     # TODO In fact K_dx_dy, notation a bit messed up here
     tree.leaves_count += 1
-    tree = LDerivedClass(tree)
-    return UDerivedClass(tree)
+    tree = pybo.LDerivedClass(tree)
+    return pybo.UDerivedClass(tree)
 
 
 def binary_tree_grammar():
@@ -137,30 +133,30 @@ def binary_tree_grammar():
     """
 
     # Some shorthands to keep the grammar readable.
-    L = LAtomSampler
-    U = UAtomSampler
-    K_dy = AliasSampler('K_dy')
-    R_b_as = AliasSampler('R_b_as')
-    R_w_as = AliasSampler('R_w_as')
-    R_b_head = AliasSampler('R_b_head')
-    R_b_head_help = AliasSampler('R_b_head_help')
-    R_w_head = AliasSampler('R_w_head')
-    R_b = AliasSampler('R_b')
-    R_w = AliasSampler('R_w')
-    K_dy_dx = AliasSampler('K_dy_dx')
-    R_b_dx = AliasSampler('R_b_dx')
-    R_w_dx = AliasSampler('R_w_dx')
-    R_b_as_dx = AliasSampler('R_b_as_dx')
-    R_w_as_dx = AliasSampler('R_w_as_dx')
-    R_b_head_dx = AliasSampler('R_b_head_dx')
-    R_w_head_dx = AliasSampler('R_w_head_dx')
-    Bij = BijectionSampler
-    Rej = RejectionSampler
-    Trans = TransformationSampler
-    Hook = HookSampler
-    DxFromDy = LDerFromUDerSampler
+    L = pybo.LAtomSampler
+    U = pybo.UAtomSampler
+    Rule = pybo.AliasSampler
+    K_dy = Rule('K_dy')
+    R_b_as = Rule('R_b_as')
+    R_w_as = Rule('R_w_as')
+    R_b_head = Rule('R_b_head')
+    R_b_head_help = Rule('R_b_head_help')
+    R_w_head = Rule('R_w_head')
+    R_b = Rule('R_b')
+    R_w = Rule('R_w')
+    K_dy_dx = Rule('K_dy_dx')
+    R_b_dx = Rule('R_b_dx')
+    R_w_dx = Rule('R_w_dx')
+    R_b_as_dx = Rule('R_b_as_dx')
+    R_w_as_dx = Rule('R_w_as_dx')
+    R_b_head_dx = Rule('R_b_head_dx')
+    R_w_head_dx = Rule('R_w_head_dx')
+    Bij = pybo.BijectionSampler
+    Trans = pybo.TransformationSampler
+    Hook = pybo.HookSampler
+    DxFromDy = pybo.LDerFromUDerSampler
 
-    grammar = DecompositionGrammar()
+    grammar = pybo.DecompositionGrammar()
 
     # Add the decomposition rules.
     grammar.rules = {
@@ -184,7 +180,7 @@ def binary_tree_grammar():
             ),
 
         'K_dy':
-            RestartableSampler(
+            pybo.RestartableSampler(
                 Hook(
                     Bij(
                         R_b_as + R_w_as,
@@ -291,24 +287,22 @@ def binary_tree_grammar():
 
 
 if __name__ == '__main__':
-    import matplotlib.pyplot as plt
     from planar_graph_sampler.evaluations_planar_graph import *
     from timeit import default_timer as timer
 
-    oracle = EvaluationOracle(my_evals_100)
-    BoltzmannSamplerBase.oracle = oracle
-    BoltzmannSamplerBase.debug_mode = False
+    oracle = pybo.EvaluationOracle(my_evals_100)
+    pybo.BoltzmannSamplerBase.oracle = oracle
+    pybo.BoltzmannSamplerBase.debug_mode = False
 
     grammar = binary_tree_grammar()
-    grammar.init()
     symbolic_x = 'x*G_1_dx(x,y)'
     symbolic_y = 'D(x*G_1_dx(x,y),y)'
     sampled_class = 'K'
-    grammar.precompute_evals(sampled_class, symbolic_x, symbolic_y)
+    grammar.init(sampled_class, symbolic_x, symbolic_y)
 
     try:
         print("expected: {}\n".format(oracle.get_expected_l_size(sampled_class, symbolic_x, symbolic_y)))
-    except BoltzmannFrameworkError:
+    except pybo.PyBoltzmannError:
         pass
 
     # random.seed(0)
@@ -319,7 +313,7 @@ if __name__ == '__main__':
     samples = 1000
     start = timer()
     while i < samples:
-        tree = grammar.sample_iterative(sampled_class, symbolic_x, symbolic_y)
+        tree = grammar.sample_iterative(sampled_class)
         # if tree.l_size > 100000:
         #     print(tree.l_size)
         #     tree = tree.underive_all()

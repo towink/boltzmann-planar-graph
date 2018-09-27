@@ -12,13 +12,9 @@
 #           Rudi Floren <rudi.floren@gmail.com>
 #           Tobias Winkler <tobias.winkler1@rwth-aachen.de>
 
-from framework.generic_samplers import *
-from framework.decomposition_grammar import DecompositionGrammar
-from framework.evaluation_oracle import EvaluationOracle
-from framework.generic_samplers import BoltzmannSamplerBase, AliasSampler
+import pyboltzmann as pybo
+
 from planar_graph_sampler.operations.closure import Closure
-from planar_graph_sampler.combinatorial_classes import BinaryTree
-from planar_graph_sampler.combinatorial_classes.dissection import IrreducibleDissection
 from planar_graph_sampler.grammar.binary_tree_decomposition import binary_tree_grammar, EarlyRejectionControl
 
 
@@ -41,10 +37,9 @@ def closure(binary_tree):
     #     return Closure().closure(binary_tree)
 
 
-
 def add_random_root_edge(decomp):
     """From ((L, U), dissection) or (U, dissection) to IrreducibleDissection."""
-    if isinstance(decomp, ProdClass):
+    if isinstance(decomp, pybo.ProdClass):
         dissection = decomp.second
     else:
         dissection = decomp
@@ -58,6 +53,7 @@ def is_admissible(dissection):
     """Admissibility check for usage in the grammar."""
     return dissection.is_admissible
 
+
 def irreducible_dissection_grammar():
     """Builds the dissection grammar. Must still be initialized with init().
 
@@ -68,26 +64,26 @@ def irreducible_dissection_grammar():
     """
 
     # Some shorthands to keep the grammar readable.
-    L = LAtomSampler
-    U = UAtomSampler
-    K = AliasSampler('K')
-    K_dx = AliasSampler('K_dx')
-    K_dx_dx = AliasSampler('K_dx_dx')
-    I = AliasSampler('I')
-    I_dx = AliasSampler('I_dx')
-    I_dx_dx = AliasSampler('I_dx_dx')
-    J = AliasSampler('J')
-    J_dx = AliasSampler('J_dx')
-    J_dx_dx = AliasSampler('J_dx_dx')
-    Bij = BijectionSampler
-    Rej = RejectionSampler
+    L = pybo.LAtomSampler
+    Rule = pybo.AliasSampler
+    K = Rule('K')
+    K_dx = Rule('K_dx')
+    K_dx_dx = Rule('K_dx_dx')
+    I = Rule('I')
+    I_dx = Rule('I_dx')
+    I_dx_dx = Rule('I_dx_dx')
+    J = Rule('J')
+    J_dx = Rule('J_dx')
+    J_dx_dx = Rule('J_dx_dx')
+    Bij = pybo.BijectionSampler
+    Rej = pybo.RejectionSampler
 
-    grammar = DecompositionGrammar()
+    grammar = pybo.DecompositionGrammar()
     # This grammar depends on the binary tree grammar so we add it.
     grammar.rules = binary_tree_grammar().rules
     EarlyRejectionControl.grammar = grammar
 
-    grammar.rules = {
+    grammar.add_rules({
 
         # Non-derived dissections (standard, rooted, admissible).
 
@@ -120,30 +116,27 @@ def irreducible_dissection_grammar():
 
         'J_a_dx_dx': Rej(J_dx_dx, is_admissible)
 
-    }
+    })
     return grammar
 
 
 if __name__ == "__main__":
     import matplotlib.pyplot as plt
     from planar_graph_sampler.evaluations_planar_graph import *
-    from timeit import default_timer as timer
 
-
-    oracle = EvaluationOracle(my_evals_100)
-    BoltzmannSamplerBase.oracle = oracle
-    BoltzmannSamplerBase.debug_mode = False
+    oracle = pybo.EvaluationOracle(my_evals_100)
+    pybo.BoltzmannSamplerBase.oracle = oracle
+    pybo.BoltzmannSamplerBase.debug_mode = False
 
     grammar = irreducible_dissection_grammar()
-    grammar.init()
     symbolic_x = 'x*G_1_dx(x,y)'
     symbolic_y = 'D(x*G_1_dx(x,y),y)'
     sampled_class = 'J_a'
-    grammar.precompute_evals(sampled_class, symbolic_x, symbolic_y)
+    grammar.init(sampled_class, symbolic_x, symbolic_y)
 
     try:
         print("expected avg. size: {}\n".format(oracle.get_expected_l_size(sampled_class, symbolic_x, symbolic_y)))
-    except BoltzmannFrameworkError:
+    except pybo.PyBoltzmannError:
         pass
 
     # random.seed(0)
@@ -154,7 +147,7 @@ if __name__ == "__main__":
     # samples = 10000
     # start = timer()
     # while i < samples:
-    #     obj = grammar.sample_iterative(sampled_class, symbolic_x, symbolic_y)
+    #     obj = grammar.sample_iterative(sampled_class)
     #     l_sizes.append(obj.l_size)
     #     i += 1
     # end = timer()
@@ -162,9 +155,8 @@ if __name__ == "__main__":
     # print("avg. size: {}".format(sum(l_sizes) / len(l_sizes)))
     # print("time: {}".format(end - start))
 
-
     while True:
-        tree = grammar.sample_iterative('K', symbolic_x, symbolic_y)
+        tree = grammar.sample_iterative('K')
         if tree.l_size == 1:
             print(tree)
             print(tree.half_edge.node_nr)

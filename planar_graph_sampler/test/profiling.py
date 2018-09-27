@@ -7,9 +7,9 @@ from planar_graph_sampler.grammar.irreducible_dissection_decomposition import ir
 
 # random.seed(2)
 
-from framework.evaluation_oracle import EvaluationOracle
-from framework.generic_samplers import BoltzmannSamplerBase
-from framework.utils import boltzmann_framework_random_gen
+from pyboltzmann.evaluation_oracle import EvaluationOracle
+from pyboltzmann.generic_samplers import BoltzmannSamplerBase
+from pyboltzmann.utils import boltzmann_framework_random_gen
 from planar_graph_sampler.evaluations_planar_graph import *
 
 from planar_graph_sampler.grammar.one_connected_decomposition import one_connected_graph_grammar
@@ -33,7 +33,7 @@ def run_profiler():
     # symbolic_y = 'D(x*G_1_dx(x,y),y)'
     # sampled_class = 'K_dx_dx'
     # print(grammar.collect_oracle_queries(sampled_class, symbolic_x, symbolic_y))
-    grammar.precompute_evals(sampled_class, symbolic_x, symbolic_y)
+    grammar._precompute_evals(sampled_class, symbolic_x, symbolic_y)
 
     # random.seed(0)
     # boltzmann_framework_random_gen.seed(13)

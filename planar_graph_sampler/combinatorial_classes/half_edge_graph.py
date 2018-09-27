@@ -16,7 +16,7 @@ import random
 
 import networkx as nx
 
-from framework.generic_classes import CombinatorialClass
+from pyboltzmann.generic_classes import CombinatorialClass
 
 from planar_graph_sampler.grammar.grammar_utils import Counter
 from planar_graph_sampler.combinatorial_classes.halfedge import HalfEdge

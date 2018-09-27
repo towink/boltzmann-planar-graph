@@ -14,12 +14,12 @@
 
 from timeit import default_timer as timer
 
-from framework.decomposition_grammar import DecompositionGrammar
-from framework.generic_samplers import *
-from framework.generic_classes import DummyClass
-from framework.class_builder import DummyBuilder
-from framework.generic_samplers import BoltzmannSamplerBase, AliasSampler
-from framework.utils import bern
+from pyboltzmann.decomposition_grammar import DecompositionGrammar
+from pyboltzmann.generic_samplers import *
+from pyboltzmann.generic_classes import DummyClass
+from pyboltzmann.class_builder import DummyBuilder
+from pyboltzmann.generic_samplers import BoltzmannSamplerBase, AliasSampler
+from pyboltzmann.utils import bern
 
 from planar_graph_sampler.evaluations_planar_graph import *
 
@@ -229,7 +229,7 @@ if __name__ == "__main__":
     # print()
 
     print("Needed oracle queries:")
-    [print(query) for query in sorted(grammar.collect_oracle_queries(sampled_class, symbolic_x, symbolic_y))]
+    [print(query) for query in sorted(grammar._collect_oracle_queries(sampled_class, symbolic_x, symbolic_y))]
     print()
 
     samples = 100000

@@ -14,10 +14,18 @@
 
 import warnings
 
-from framework.settings_global import Settings
-from framework.class_builder import DummyBuilder
-from framework.generic_samplers import *
-from framework.iterative_sampler import _IterativeSampler
+import pyboltzmann as pybo
+
+__all__ = ['DecompositionGrammar']
+
+
+def _only_if_initialized(func):
+    def wrapper(self, *args, **kwargs):
+        if not self._initialized:
+            pybo.DecompositionGrammar._grammar_not_initialized_error()
+        return func(self, *args, **kwargs)
+
+    return wrapper
 
 
 class DecompositionGrammar(object):
@@ -26,44 +34,77 @@ class DecompositionGrammar(object):
 
     Parameters
     ----------
-    rules: dict, optional (default=None)
+    rules : dict, optional (default=None)
         Initial set of rules of this grammar.
     """
 
     def __init__(self, rules=None):
         if rules is None:
             rules = {}
+        self._initialized = False
         self._rules = rules
         self._recursive_rules = None
         self._restart_flag = False
+        self._target_rule = None
+        self._target_x = None
+        self._target_y = None
+        self._needed_oracle_queries = None
 
     @staticmethod
     def _grammar_not_initialized_error():
         msg = "Grammar not initialized"
-        raise BoltzmannFrameworkError(msg)
+        raise pybo.PyBoltzmannError(msg)
 
     @staticmethod
     def _missing_rule_error(alias):
         msg = "Not a rule in the grammar: {}".format(alias)
-        raise BoltzmannFrameworkError(msg)
+        raise pybo.PyBoltzmannError(msg)
 
-    def init(self):
+    def init(self, target_rule, x='x', y='y'):
         """Initializes the grammar.
 
         A grammar can only be used for sampling after initialization.
+        The initialization takes time linear in the size of the grammar.
+
+        Parameters
+        ----------
+        target_rule : str
+            Rule to be sampled from (sampling will also be possible for all
+            rules the target depends on).
+        x : str, optional (default='x')
+            Symbolic x-argument.
+        y : str, optional (default='y')
+            Symbolic y-argument.
         """
-        # Initialize the alias samplers (set their referenced grammar to this grammar).
+        if target_rule not in self.rules:
+            self._missing_rule_error(target_rule)
+        self._target_rule, self._target_x, self._target_y = target_rule, x, y
+        # Initialize the alias samplers, i.e. set their referenced grammar to
+        # this grammar.
         self._init_alias_samplers()
         # Find out which rules are recursive.
         self._find_recursive_rules()
-        # Automatically set target class labels of transformation samplers where possible.
+        # Automatically set target class labels of transformation samplers
+        # where possible.
         self._infer_target_class_labels()
+        # Get the needed oracle queries and check if they are present in the
+        # oracle.
+        self._initialized = True
+        self._needed_oracle_queries = self._collect_oracle_queries()
+        if not pybo.BoltzmannSamplerBase.oracle.contains_all(
+                self._needed_oracle_queries):
+                raise pybo.PyBoltzmannError(
+                    "The following evals are needed: {}".format(
+                        self._needed_oracle_queries
+                    ))
+        # Precompute the evaluations for all intermediate classes.
+        self._precompute_evals()
 
     def _init_alias_samplers(self):
         """Sets the grammar in the alias samplers."""
 
         def apply_to_each(sampler):
-            if isinstance(sampler, AliasSampler):
+            if isinstance(sampler, pybo.AliasSampler):
                 sampler.grammar = self
                 sampler._referenced_sampler = self[sampler.sampled_class]
                 sampler.children = sampler._referenced_sampler,  # 1-tuple.
@@ -73,13 +114,16 @@ class DecompositionGrammar(object):
             self[alias].accept(v)
 
     def _find_recursive_rules(self):
-        """Analyses the grammar to find out which rules are recursive and saves them."""
+        """Analyses the grammar to find out which rules are recursive and saves
+        them.
+        """
         rec_rules = []
         for alias in self.rules:
             sampler = self[alias]
 
-            def apply_to_each(sampler):
-                if isinstance(sampler, AliasSampler) and sampler.sampled_class == alias:
+            def apply_to_each(s):
+                if isinstance(s, pybo.AliasSampler) \
+                        and s.sampled_class == alias:
                     return alias
 
             v = self._DFSVisitor(apply_to_each)
@@ -90,31 +134,52 @@ class DecompositionGrammar(object):
         self._recursive_rules = set(rec_rules)
 
     def _infer_target_class_labels(self):
-        """Automatically tries to infer class labels if they are not given explicitly."""
+        """Automatically tries to infer class labels if they are not given
+        explicitly.
+        """
         for alias in self.rules:
             sampler = self[alias]
-            # Looks if the top sampler of a rule is a transformation sampler and this case automatically sets the label
-            # of the target class.
-            while isinstance(sampler, BijectionSampler):
+            # Looks if the top sampler of a rule is a transformation sampler
+            # and this case automatically sets the label of the target class.
+            while isinstance(sampler, pybo.BijectionSampler):
                 sampler = sampler.get_children()[0]
-            if isinstance(sampler, TransformationSampler):
+            if isinstance(sampler, pybo.TransformationSampler):
                 sampler.sampled_class = alias
+
+    def _collect_oracle_queries(self):
+        """Returns all oracle queries that may be needed when sampling from
+        the rule identified by alias.
+        """
+        visitor = self._CollectOracleQueriesVisitor(self._target_x,
+                                                    self._target_y)
+        self[self._target_rule].accept(visitor)
+        return sorted(visitor.result)
+
+    def _precompute_evals(self):
+        """Precomputes all evaluations needed for sampling from the given
+        class with the symbolic x and y values.
+        """
+        visitor = self._PrecomputeEvaluationsVisitor(self._target_x,
+                                                     self._target_y)
+        self[self._target_rule].accept(visitor)
 
     def restart_sampler(self):
         """Restarts the iterative sampler."""
         self._restart_flag = True
 
-    def set_builder(self, rules=None, builder=DefaultBuilder()):
+    def set_builder(self, rules=None, builder=pybo.DefaultBuilder()):
         """Sets a builder for a given set of rules.
 
         Parameters
         ----------
-        rules: str or iterable, optional (default=all rules in the grammar)
-        builder: CombinatorialClassBuilder, optional (default=DefaultBuilder)
+        rules : str or iterable, optional (default=all rules in the grammar)
+            Rules for which the builder should be set.
+        builder : CombinatorialClassBuilder, optional (default=DefaultBuilder)
+            The builder object itself.
 
         Returns
         -------
-        v: SetBuilderVisitor
+        v : SetBuilderVisitor
         """
         if rules is None:
             rules = self._rules.keys()
@@ -130,8 +195,8 @@ class DecompositionGrammar(object):
 
         Parameters
         ----------
-        alias: str
-        sampler: BoltzmannSamplerBase
+        alias : str
+        sampler : BoltzmannSamplerBase
         """
         self._rules[alias] = sampler
 
@@ -144,7 +209,7 @@ class DecompositionGrammar(object):
 
         Parameters
         ----------
-        alias: str
+        alias : str
 
         Returns
         -------
@@ -157,7 +222,7 @@ class DecompositionGrammar(object):
 
         Parameters
         ----------
-        item: str
+        item : str
 
         Returns
         -------
@@ -167,6 +232,12 @@ class DecompositionGrammar(object):
 
     @property
     def rules(self):
+        """Gets the rules in the grammar.
+
+        Returns
+        -------
+        rules : dict
+        """
         return self._rules
 
     @rules.setter
@@ -175,13 +246,26 @@ class DecompositionGrammar(object):
 
         Parameters
         ----------
-        rules: dict
+        rules : dict
+            The rules to be added.
+        """
+        # TODO Remove, take add_rules instead.
+        for alias in rules:
+            self[alias] = rules[alias]
+
+    def add_rules(self, rules):
+        """Adds the given set of rules.
+
+        Parameters
+        ----------
+        rules : dict
             The rules to be added.
         """
         for alias in rules:
             self[alias] = rules[alias]
 
     @property
+    @_only_if_initialized
     def recursive_rules(self):
         """Gets the recursive rules in this grammar.
 
@@ -189,13 +273,12 @@ class DecompositionGrammar(object):
 
         Returns
         -------
-        rules: set of str
-            The aliases of all recursive rules in this gramamr.
+        rules : set of str
+            The aliases of all recursive rules in this grammar.
         """
-        if self._recursive_rules is None:
-            DecompositionGrammar._grammar_not_initialized_error()
         return sorted(self._recursive_rules)
 
+    @_only_if_initialized
     def is_recursive_rule(self, alias):
         """Checks if the rule corresponding to the given alias is recursive.
 
@@ -205,98 +288,53 @@ class DecompositionGrammar(object):
 
         Returns
         -------
-        is_recursive: bool
+        is_recursive : bool
         """
-        if self._recursive_rules is None:
-            DecompositionGrammar._grammar_not_initialized_error()
-        return alias in self.recursive_rules
+        return alias in self._recursive_rules
 
-    def collect_oracle_queries(self, alias, x, y):
-        """Returns all oracle queries that may be needed when sampling from the rule identified by alias.
-
-        Parameters
-        ----------
-        alias: str
-        x: str
-            Symbolic x value.
-        y: str
-            Symbolic y value.
-
-        Returns
-        -------
-        oracle_queries: set of str
-        """
-        if alias not in self.rules:
-            DecompositionGrammar._missing_rule_error(alias)
-        visitor = self._CollectOracleQueriesVisitor(x, y)
-        self[alias].accept(visitor)
-        return sorted(visitor.result)
-
-    def precompute_evals(self, alias, x, y):
-        """Precomputes all evaluations needed for sampling from the given class with the symbolic x and y values.
-
-        Parameters
-        ----------
-        alias: str
-        x: str
-            Symbolic x value.
-        y: str
-            Symbolic y value.
-        """
-        if alias not in self.rules:
-            DecompositionGrammar._missing_rule_error(alias)
-        visitor = self._PrecomputeEvaluationsVisitor(x, y)
-        self[alias].accept(visitor)
-
-    def sample(self, alias, x, y):
-        """Samples from the rule identified by the given alias.
-
-        Parameters
-        ----------
-        alias: str
-        x: str
-            Symbolic x value.
-        y: str
-            Symbolic y value.
-
-        Returns
-        -------
-        CombinatorialClass
-        """
-        sampler = None
-        try:
-            sampler = self[alias]
-        except KeyError:
-            DecompositionGrammar._missing_rule_error(alias)
-        return sampler.sample(x, y)
-
+    @_only_if_initialized
     def dummy_sampling_mode(self, delete_transformations=False):
         """Changes the state of the grammar to the dummy sampling mode.
 
-        A dummy object only records its size but otherwise has no internal structure which is useful for testing sizes.
-        This will overwrite existing builder information. After this operation, dummies can be sampled with sample(...).
+        A dummy object only records its size but otherwise has no internal
+        structure which is useful for testing sizes. This will overwrite
+        existing builder information. After this operation, dummies can be
+        sampled with sample(...).
         """
-        v = self.set_builder(builder=DummyBuilder())
+        # TODO Check if it actually works, delete otherwise.
+        raise NotImplementedError
+        v = self.set_builder(builder=pybo.DummyBuilder())
         if v.overwrites_builder and Settings.debug_mode:
-            warnings.warn("dummy_sampling_mode has overwritten existing builders")
+            warnings.warn(
+                "dummy_sampling_mode has overwritten existing builders")
 
         if delete_transformations:
             def apply_to_each(sampler):
-                if isinstance(sampler, TransformationSampler) and not isinstance(sampler, RejectionSampler):
+                if isinstance(sampler, pybo.TransformationSampler) \
+                        and not isinstance(sampler, pybo.RejectionSampler):
                     sampler.transformation = lambda x: x
 
             for alias in self.rules:
                 v = self._DFSVisitor(apply_to_each)
                 self[alias].accept(v)
 
+    @_only_if_initialized
     def sample_iterative(self, alias):
         """Samples from the rule identified by `alias` in an iterative manner.
+
+        Parameters
+        ----------
+        alias : str
+            The rule to be sampled from
 
         Traverses the decomposition tree in post-order.
         The tree may be arbitrarily large and is expanded on the fly.
         """
-
-        return _IterativeSampler(self[alias], self).sample()
+        try:
+            sampler = self[alias]
+        except KeyError:
+            DecompositionGrammar._missing_rule_error(alias)
+        return pybo.IterativeSampler(sampler, self).sample()
 
     class _DFSVisitor:
         """
@@ -304,7 +342,7 @@ class DecompositionGrammar(object):
 
         Parameters
         ----------
-        f: function
+        f : function
             Function to be applied to all nodes (=samplers).
         """
 
@@ -320,9 +358,10 @@ class DecompositionGrammar(object):
             # Append the return value to the result list if any.
             if r is not None:
                 self.result.append(r)
-            if isinstance(sampler, AliasSampler):
+            if isinstance(sampler, pybo.AliasSampler):
                 if sampler.sampled_class in self._seen_alias_samplers:
-                    # Do not recurse into the alias sampler because we have already seen it.
+                    # Do not recurse into the alias sampler because we have
+                    # already seen it.
                     return False
                 else:
                     self._seen_alias_samplers.add(sampler.sampled_class)
@@ -336,11 +375,6 @@ class DecompositionGrammar(object):
     class _SetBuilderVisitor:
         """
         Sets builders until hitting an AliasSampler.
-
-        Parameters
-        ----------
-        builder: CombinatorialClassBuilder
-            The builder to be set to all visited samplers.
         """
 
         def __init__(self, builder):
@@ -348,7 +382,7 @@ class DecompositionGrammar(object):
             self._overwrites_builder = False
 
         def visit(self, sampler):
-            if isinstance(sampler, AliasSampler):
+            if isinstance(sampler, pybo.AliasSampler):
                 # Don't recurse into the alias samplers.
                 return False
             else:
@@ -364,12 +398,7 @@ class DecompositionGrammar(object):
     class _PrecomputeEvaluationsVisitor:
         """
         Precomputes evaluations for the sampler in the given hierarchy.
-        Parameters
-        ----------
-        x: str
-            Symbolic x value.
-        y: str
-            Symbolic y value.
+        Parameters.
         """
 
         def __init__(self, x, y):
@@ -387,15 +416,16 @@ class DecompositionGrammar(object):
                 _, y = self._stack_y.pop()
                 self._y = y
             sampler.precompute_eval(self._x, self._y)
-            if isinstance(sampler, LSubsSampler):
+            if isinstance(sampler, pybo.LSubsSampler):
                 self._stack_x.append((sampler.rhs, self._x))
                 self._x = sampler.rhs.oracle_query_string(self._x, self._y)
-            if isinstance(sampler, USubsSampler):
+            if isinstance(sampler, pybo.USubsSampler):
                 self._stack_y.append((sampler.rhs, self._y))
                 self._y = sampler.rhs.oracle_query_string(self._x, self._y)
-            if isinstance(sampler, AliasSampler):
+            if isinstance(sampler, pybo.AliasSampler):
                 if sampler.sampled_class in self._seen_alias_samplers:
-                    # Indicate that the recursion should not go further down here as we have already seen the alias.
+                    # Indicate that the recursion should not go further down
+                    # here as we have already seen the alias.
                     return False
                 else:
                     self._seen_alias_samplers.add(sampler.sampled_class)
@@ -404,28 +434,17 @@ class DecompositionGrammar(object):
 
     class _CollectOracleQueriesVisitor:
         """
-        Predicts which oracle queries will be needed when sampling from the grammar.
-        This might still be a bit buggy but its not crucial for the correctness of the samplers.
-
-        Parameters
-        ----------
-        x: str
-            Symbolic x value.
-        y: str
-            Symbolic y value.
+        Predicts which oracle queries will be needed when sampling from the
+        grammar.
         """
 
         def __init__(self, x, y):
             self._seen_alias_samplers = set()
-            self._result = set()
+            self.result = set()
             self._x = x
             self._y = y
             self._stack_x = []
             self._stack_y = []
-
-        @property
-        def result(self):
-            return self._result
 
         def visit(self, sampler):
             if self._stack_x and self._stack_x[-1][0] == sampler:
@@ -434,27 +453,31 @@ class DecompositionGrammar(object):
             if self._stack_y and self._stack_y[-1][0] == sampler:
                 _, y = self._stack_y.pop()
                 self._y = y
-            if isinstance(sampler, LAtomSampler) or isinstance(sampler, UAtomSampler):
-                self._result.add(sampler.oracle_query_string(self._x, self._y))
-            if isinstance(sampler, LSubsSampler):
+            if isinstance(sampler, pybo.LAtomSampler) \
+                    or isinstance(sampler, pybo.UAtomSampler):
+                self.result.add(sampler.oracle_query_string(self._x, self._y))
+            if isinstance(sampler, pybo.LSubsSampler):
                 self._stack_x.append((sampler.rhs, self._x))
                 self._x = sampler.rhs.oracle_query_string(self._x, self._y)
-            if isinstance(sampler, USubsSampler):
+            if isinstance(sampler, pybo.USubsSampler):
                 self._stack_y.append((sampler.rhs, self._y))
                 self._y = sampler.rhs.oracle_query_string(self._x, self._y)
-            if isinstance(sampler, TransformationSampler) and not isinstance(sampler, BijectionSampler):
+            if isinstance(sampler, pybo.TransformationSampler) \
+                    and not isinstance(sampler, pybo.BijectionSampler):
                 if sampler._eval_transform is None:
-                    self._result.add(sampler.oracle_query_string(self._x, self._y))
-                # Otherwise the sampler has an eval_transform function and does not directly query the oracle.
-            if isinstance(sampler, AliasSampler):
+                    self.result.add(
+                        sampler.oracle_query_string(self._x, self._y))
+                # Otherwise the sampler has an eval_transform function and does
+                # not directly query the oracle.
+            if isinstance(sampler, pybo.AliasSampler):
                 if sampler.sampled_class in self._seen_alias_samplers:
                     if sampler.is_recursive:
-                        self._result.add(sampler.oracle_query_string(self._x, self._y))
-                    # Indicate that the recursion should not go further down here as we have already seen the alias.
+                        self.result.add(
+                            sampler.oracle_query_string(self._x, self._y))
+                    # Indicate that the recursion should not go further down
+                    # here as we have already seen the alias.
                     return False
                 else:
                     self._seen_alias_samplers.add(sampler.sampled_class)
                     # Recurse further down.
                     return True
-
-

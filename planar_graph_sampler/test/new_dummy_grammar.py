@@ -13,15 +13,14 @@
 #           Tobias Winkler <tobias.winkler1@rwth-aachen.de>
 
 from __future__ import division
-import math
 
-from framework.class_builder import CombinatorialClassBuilder, DummyBuilder
-from framework.decomposition_grammar import DecompositionGrammar
-from framework.generic_samplers import *
-from framework.generic_samplers import BoltzmannSamplerBase, AliasSampler
-from framework.utils import bern
+from pyboltzmann.class_builder import DummyBuilder
+from pyboltzmann.decomposition_grammar import DecompositionGrammar
+from pyboltzmann.generic_samplers import *
+from pyboltzmann.generic_samplers import BoltzmannSamplerBase, AliasSampler
+from pyboltzmann.utils import bern
 
-from planar_graph_sampler.grammar.grammar_utils import divide_by_2, underive, to_l_derived_class, to_u_derived_class
+from planar_graph_sampler.grammar.grammar_utils import divide_by_2
 
 
 def to_K_dy(dummy):
@@ -393,9 +392,9 @@ def dummy_sampling_grammar():
 
 
 if __name__ == "__main__":
-    from framework.evaluation_oracle import EvaluationOracle
+    from pyboltzmann.evaluation_oracle import EvaluationOracle
     from planar_graph_sampler.evaluations_planar_graph import *
-    from framework.utils import boltzmann_framework_random_gen
+    from pyboltzmann.utils import boltzmann_framework_random_gen
     from timeit import default_timer as timer
 
     # oracle = EvaluationOracle(planar_graph_evals[10000])
@@ -411,11 +410,11 @@ if __name__ == "__main__":
     symbolic_x = 'x*G_1_dx(x,y)'
     # symbolic_y = 'D(x*G_1_dx(x,y),y)'
     sampled_class = 'D_dx_dx'
-    grammar.precompute_evals(sampled_class, symbolic_x, symbolic_y)
+    grammar._precompute_evals(sampled_class, symbolic_x, symbolic_y)
 
     try:
         print("expected: {}\n".format(oracle.get_expected_l_size(sampled_class, symbolic_x, symbolic_y)))
-    except BoltzmannFrameworkError:
+    except PyBoltzmannError:
         pass
 
     # random.seed(0)

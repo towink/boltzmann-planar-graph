@@ -16,10 +16,10 @@ import argparse
 import logging
 from collections import deque
 
-from framework.generic_samplers import *
-from framework.decomposition_grammar import DecompositionGrammar
-from framework.evaluation_oracle import EvaluationOracle
-from framework.generic_samplers import BoltzmannSamplerBase, AliasSampler
+from pyboltzmann.generic_samplers import *
+from pyboltzmann.decomposition_grammar import DecompositionGrammar
+from pyboltzmann.evaluation_oracle import EvaluationOracle
+from pyboltzmann.generic_samplers import BoltzmannSamplerBase, AliasSampler
 
 from planar_graph_sampler.operations.closure import Closure
 from planar_graph_sampler.operations.primal_map import PrimalMap
@@ -64,7 +64,7 @@ def other_oldtest():
     print(test_grammar.recursive_rules)
     print()
 
-    print(test_grammar.collect_oracle_queries('Bla', 'x', 'y'))
+    print(test_grammar._collect_oracle_queries('Bla', 'x', 'y'))
 
     # for key in test_grammar.get_rules():
     # print(test_grammar.collect_oracle_queries(key, 'x', 'y'))
@@ -96,7 +96,7 @@ def binary_tree_oldtest():
     symbolic_y = 'D(x*G_1_dx(x,y),y)'
 
     print("Needed oracle entries:")
-    [print(query) for query in sorted(grammar.collect_oracle_queries('K_dy', symbolic_x, symbolic_y))]
+    [print(query) for query in sorted(grammar._collect_oracle_queries('K_dy', symbolic_x, symbolic_y))]
     tree = grammar.sample('R_b', symbolic_x, symbolic_y)
 
     print("Black nodes: {}".format(tree.black_nodes_count))
@@ -283,7 +283,7 @@ def network_oldtest():
     symbolic_x = 'x*G_1_dx(x,y)'
     symbolic_y = 'y'
 
-    [print(query) for query in sorted(grammar.collect_oracle_queries('D', symbolic_x, symbolic_y))]
+    [print(query) for query in sorted(grammar._collect_oracle_queries('D', symbolic_x, symbolic_y))]
     network = grammar.sample('D', symbolic_x, symbolic_y)
 
     print(network.vertices_list)

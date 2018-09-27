@@ -12,13 +12,10 @@
 #           Rudi Floren <rudi.floren@gmail.com>
 #           Tobias Winkler <tobias.winkler1@rwth-aachen.de>
 
-from framework.decomposition_grammar import DecompositionGrammar
-from framework.generic_samplers import *
-from framework.evaluation_oracle import EvaluationOracle
-from framework.generic_samplers import BoltzmannSamplerBase, AliasSampler
+import pyboltzmann as pybo
+
 from planar_graph_sampler.combinatorial_classes.half_edge_graph import HalfEdgeGraph
 from planar_graph_sampler.grammar.binary_tree_decomposition import EarlyRejectionControl
-
 from planar_graph_sampler.grammar.grammar_utils import to_l_derived_class, divide_by_2
 from planar_graph_sampler.grammar.irreducible_dissection_decomposition import irreducible_dissection_grammar
 from planar_graph_sampler.operations.primal_map import PrimalMap
@@ -62,29 +59,28 @@ def three_connected_graph_grammar():
     """
 
     # Some shorthands to keep the grammar readable.
-    J_a = AliasSampler('J_a')
-    J_a_dx = AliasSampler('J_a_dx')
-    J_a_dx_dx = AliasSampler('J_a_dx_dx')
-    G_3_arrow = AliasSampler('G_3_arrow')
-    G_3_arrow_dy = AliasSampler('G_3_arrow_dy')
-    G_3_arrow_dx = AliasSampler('G_3_arrow_dx')
-    G_3_arrow_dx_dx = AliasSampler('G_3_arrow_dx_dx')
-    G_3_arrow_dx_dy = AliasSampler('G_3_arrow_dx_dy')
-    G_3_arrow_dy_dy = AliasSampler('G_3_arrow_dy_dy')
-    M_3_arrow = AliasSampler('M_3_arrow')
-    M_3_arrow_dx = AliasSampler('M_3_arrow_dx')
-    M_3_arrow_dx_dx = AliasSampler('M_3_arrow_dx_dx')
-    Bij = BijectionSampler
-    Rej = RejectionSampler
-    Trans = TransformationSampler
-    DyFromDx = UDerFromLDerSampler
+    Rule = pybo.AliasSampler
+    J_a = Rule('J_a')
+    J_a_dx = Rule('J_a_dx')
+    J_a_dx_dx = Rule('J_a_dx_dx')
+    G_3_arrow = Rule('G_3_arrow')
+    G_3_arrow_dx = Rule('G_3_arrow_dx')
+    G_3_arrow_dx_dx = Rule('G_3_arrow_dx_dx')
+    G_3_arrow_dx_dy = Rule('G_3_arrow_dx_dy')
+    M_3_arrow = Rule('M_3_arrow')
+    M_3_arrow_dx = Rule('M_3_arrow_dx')
+    M_3_arrow_dx_dx = Rule('M_3_arrow_dx_dx')
+    Bij = pybo.BijectionSampler
+    Rej = pybo.RejectionSampler
+    Trans = pybo.TransformationSampler
+    DyFromDx = pybo.UDerFromLDerSampler
 
-    grammar = DecompositionGrammar()
+    grammar = pybo.DecompositionGrammar()
     # Depends on irreducible dissection so we add those rules.
     grammar.rules = irreducible_dissection_grammar().rules
     EarlyRejectionControl.grammar = grammar
 
-    grammar.rules = {
+    grammar.add_rules({
 
         # Non-derived 3-connected rooted planar maps/graphs.
 
@@ -134,38 +130,36 @@ def three_connected_graph_grammar():
             Bij(
                 Rej(
                     G_3_arrow,
-                    lambda g: bern(1 / g.number_of_edges)
+                    lambda g: pybo.bern(1 / g.number_of_edges)
                 ),
                 lambda g: HalfEdgeGraph(g.half_edge)
             ),
 
-    }
+    })
 
     return grammar
 
 
 if __name__ == "__main__":
-    import matplotlib.pyplot as plt
     from planar_graph_sampler.evaluations_planar_graph import *
     from timeit import default_timer as timer
 
     my_evals_100['G_3(x*G_1_dx(x,y),D(x*G_1_dx(x,y),y))'] = 'dummy'
-    oracle = EvaluationOracle(my_evals_100)
-    BoltzmannSamplerBase.oracle = oracle
+    oracle = pybo.EvaluationOracle(my_evals_100)
+    pybo.BoltzmannSamplerBase.oracle = oracle
 
     grammar = three_connected_graph_grammar()
-    grammar.init()
     symbolic_x = 'x*G_1_dx(x,y)'
     symbolic_y = 'D(x*G_1_dx(x,y),y)'
     sampled_class = 'G_3_arrow'
-    grammar.precompute_evals(sampled_class, symbolic_x, symbolic_y)
+    grammar.init(sampled_class, symbolic_x, symbolic_y)
 
     # random.seed(0)
     # boltzmann_framework_random_gen.seed(0)
 
     try:
         print("expected avg. size: {}\n".format(oracle.get_expected_l_size(sampled_class, symbolic_x, symbolic_y)))
-    except BoltzmannFrameworkError:
+    except pybo.PyBoltzmannError:
         pass
 
     l_sizes = []
@@ -173,7 +167,7 @@ if __name__ == "__main__":
     samples = 10000
     start = timer()
     while i < samples:
-        obj = grammar.sample_iterative(sampled_class, symbolic_x, symbolic_y)
+        obj = grammar.sample_iterative(sampled_class)
         # assert obj.marked_atom is not None
         l_sizes.append(obj.l_size)
         i += 1

@@ -1,13 +1,26 @@
-from framework.generic_classes import BoltzmannFrameworkError
+# -*- coding: utf-8 -*-
+#    Copyright (C) 2018 by
+#    Tobias Winkler <tobias.winkler1@rwth-aachen.de>
+#    All rights reserved.
+#    BSD license.
+#
+# Authors:  Tobias Winkler <tobias.winkler1@rwth-aachen.de>
+#
+
+import pyboltzmann as pybo
+
+__all__ = ['IterativeSampler']
 
 
-class _IterativeSampler(object):
+class IterativeSampler(object):
     """
+    Implements the iterative sampling mechanism.
 
     Parameters
     ----------
-    sampler: BoltzmannSamplerBase
-
+    sampler : BoltzmannSamplerBase
+    grammar : DecompositionGrammar
+    is_restartable : bool
     """
 
     def __init__(self, sampler, grammar, is_restartable=False):
@@ -41,16 +54,11 @@ class _IterativeSampler(object):
             self.l_size -= obj.l_size
             return obj
 
-    def sample_with_restart_check(self, max_size=1000000, abs_tolerance=0):
+    def sample_with_restart_check(self):
         """Invokes the iterative sampler for the given symbolic parameters.
 
-        Parameters
-        ----------
-        x: str
-        y: str
-        max_size: int # TODO implement this
-        abs_tolerance: int
-
+        In each iteration, check if the sampler should be restarted.
+        This can notable decrease performance.
         """
 
         # Main stack.
@@ -66,7 +74,8 @@ class _IterativeSampler(object):
             # Check if the sampler should be restarted.
             if self.grammar._restart_flag:
                 if not self.is_restartable:
-                    raise BoltzmannFrameworkError("Trying to restart a non-restartable sampler.")
+                    raise PyBoltzmannError(
+                        "Trying to restart a non-restartable sampler.")
                 # print("Restarting ...")
                 self.grammar._restart_flag = False
                 stack = [self.sampler]
@@ -86,17 +95,8 @@ class _IterativeSampler(object):
         assert result_stack[0] is not None
         return result_stack[0]
 
-    def sample(self, max_size=1000000, abs_tolerance=0):
-        """Invokes the iterative sampler for the given symbolic parameters.
-
-        Parameters
-        ----------
-        x: str
-        y: str
-        max_size: int # TODO implement this
-        abs_tolerance: int
-
-        """
+    def sample(self):
+        """Invokes the iterative sampler for the given symbolic parameters."""
 
         # Main stack.
         stack = [self.sampler]

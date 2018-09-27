@@ -12,7 +12,7 @@
 #           Rudi Floren <rudi.floren@gmail.com>
 #           Tobias Winkler <tobias.winkler1@rwth-aachen.de>
 
-from framework.generic_classes import UDerivedClass, LDerivedClass
+from pyboltzmann.generic_classes import UDerivedClass, LDerivedClass
 
 
 def underive(obj):

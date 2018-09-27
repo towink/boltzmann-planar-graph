@@ -13,10 +13,10 @@
 #           Tobias Winkler <tobias.winkler1@rwth-aachen.de>
 
 
-from framework.decomposition_grammar import DecompositionGrammar
-from framework.generic_samplers import *
-from framework.generic_samplers import BoltzmannSamplerBase, AliasSampler
-from framework.utils import bern
+from pyboltzmann.decomposition_grammar import DecompositionGrammar
+from pyboltzmann.generic_samplers import *
+from pyboltzmann.generic_samplers import BoltzmannSamplerBase, AliasSampler
+from pyboltzmann.utils import bern
 
 from planar_graph_sampler.grammar.grammar_utils import underive, to_u_derived_class, divide_by_2, to_l_derived_class
 
